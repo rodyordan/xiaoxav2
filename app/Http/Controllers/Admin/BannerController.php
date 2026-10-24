@@ -16,6 +16,11 @@ class BannerController extends Controller
 
     public function store(Request $request)
     {
+        $request->merge([
+            'titulo' => trim((string) $request->titulo),
+            'url_boton' => $request->filled('url_boton') ? trim((string) $request->url_boton) : null,
+        ]);
+
         $data = $request->validate([
             'titulo'    => 'required|string|max:100|unique:banners,titulo',
             'url_boton' => 'nullable|string|max:500',
@@ -24,7 +29,13 @@ class BannerController extends Controller
             'imagen'    => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
         ], [
             'titulo.required' => 'El título es obligatorio.',
+            'titulo.string'   => 'El título debe ser texto.',
+            'titulo.max'      => 'El título no puede tener más de 100 caracteres.',
             'titulo.unique'   => 'Ya existe un banner con ese título.',
+            'url_boton.string'=> 'La URL debe ser texto.',
+            'url_boton.max'   => 'La URL no puede tener más de 500 caracteres.',
+            'orden.integer'   => 'El orden debe ser un número entero.',
+            'orden.min'       => 'El orden no puede ser negativo.',
             'imagen.required' => 'La imagen es obligatoria.',
             'imagen.image'    => 'El archivo debe ser una imagen válida.',
             'imagen.mimes'    => 'Solo se permiten JPG, JPEG, PNG o WEBP.',
@@ -45,12 +56,24 @@ class BannerController extends Controller
 
         Banner::create($data);
 
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Banner creado correctamente.',
+            ]);
+        }
+
         return redirect()->route('admin.banners.index')->with('success', 'Banner creado correctamente');
     }
 
     public function update(Request $request, $id)
     {
         $banner = Banner::findOrFail($id);
+
+        $request->merge([
+            'titulo' => trim((string) $request->titulo),
+            'url_boton' => $request->filled('url_boton') ? trim((string) $request->url_boton) : null,
+        ]);
 
         $data = $request->validate([
             'titulo'    => 'required|string|max:100|unique:banners,titulo,' . $id . ',id_banner',
@@ -60,7 +83,13 @@ class BannerController extends Controller
             'imagen'    => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ], [
             'titulo.required' => 'El título es obligatorio.',
+            'titulo.string'   => 'El título debe ser texto.',
+            'titulo.max'      => 'El título no puede tener más de 100 caracteres.',
             'titulo.unique'   => 'Ya existe un banner con ese título.',
+            'url_boton.string'=> 'La URL debe ser texto.',
+            'url_boton.max'   => 'La URL no puede tener más de 500 caracteres.',
+            'orden.integer'   => 'El orden debe ser un número entero.',
+            'orden.min'       => 'El orden no puede ser negativo.',
             'imagen.image'    => 'El archivo debe ser una imagen válida.',
             'imagen.mimes'    => 'Solo se permiten JPG, JPEG, PNG o WEBP.',
             'imagen.max'      => 'La imagen no debe pesar más de 2MB.',
@@ -78,6 +107,13 @@ class BannerController extends Controller
         }
 
         $banner->update($data);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Banner actualizado correctamente.',
+            ]);
+        }
 
         return back()->with('success', 'Banner actualizado correctamente');
     }

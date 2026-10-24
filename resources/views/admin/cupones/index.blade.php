@@ -2,13 +2,11 @@
 
 @section('content')
 
-    {{-- Flatpickr CSS --}}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
     <style>
         [x-cloak] { display: none !important; }
 
-        /* ===== Calendario compacto ===== */
         .flatpickr-calendar {
             width: 252px !important;
             padding: 0 !important;
@@ -135,9 +133,8 @@
         }
     </style>
 
-    <div x-data="{ deleteModal: false, activeId: null, createModal: {{ $errors->any() ? 'true' : 'false' }} }">
+    <div x-data="{ deleteModal: false, activeId: null, createModal: false }">
 
-        {{-- Header --}}
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-6">
             <div>
                 <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">Cupones</h1>
@@ -151,7 +148,6 @@
             </button>
         </div>
 
-        {{-- Buscador + Filtros --}}
         <form action="{{ route('admin.cupones.index') }}" method="GET"
             x-data="{
                 estado: '',
@@ -192,7 +188,6 @@
 
                 <span class="text-sm font-bold text-gray-700 shrink-0">Filtros:</span>
 
-                {{-- Estado --}}
                 <div x-data="{ open: false }" class="relative w-full max-w-[180px]">
                     <input type="hidden" name="estado" :value="estado">
 
@@ -223,7 +218,6 @@
                     </div>
                 </div>
 
-                {{-- Fecha de Vencimiento --}}
                 <div class="relative w-full max-w-[220px]">
                     <input type="text" name="fecha" id="fechaFiltro" value="" class="sr-only" readonly>
 
@@ -242,7 +236,6 @@
             </div>
         </form>
 
-        {{-- Tabla --}}
         <div class="bg-white rounded-[2.5rem] border border-gray-200 shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
@@ -323,13 +316,14 @@
                                     </div>
                                 </td>
 
-                                {{-- ============ MODAL EDITAR ============ --}}
                                 <template x-if="editModal">
                                     <div class="fixed inset-0 z-[110] flex items-center justify-center p-4"
                                          x-data="{
                                              estadoEdit: '{{ $cupon->estado_cupon }}',
                                              estadoTextoEdit: '{{ $cupon->estado_cupon ? 'Activo' : 'Inactivo' }}',
                                              fechaEdit: '{{ $cupon->fecha_vencimiento }}',
+                                             submitting: false,
+                                             errores: {},
                                              initFecha() {
                                                  const input = this.$refs.fechaEditInput;
                                                  const btn = this.$refs.fechaEditBtn;
@@ -352,6 +346,7 @@
                                                              const [y, m, d] = dateStr.split('-');
                                                              texto.textContent = `${d}/${m}/${y}`;
                                                          }
+                                                         delete this.errores.fecha_vencimiento;
                                                      },
                                                      onOpen: (selectedDates, dateStr, instance) => {
                                                          setTimeout(() => instance._positionCalendar(), 10);
@@ -362,51 +357,125 @@
                                                      e.preventDefault();
                                                      picker.open();
                                                  });
+                                             },
+                                             async submitEdit(e) {
+                                                 if (this.submitting) return;
+                                                 this.submitting = true;
+                                                 this.errores = {};
+
+                                                 const form = e.target;
+
+                                                 const codigo = form.querySelector('[name=codigo_cupon]').value.trim();
+                                                 const monto = form.querySelector('[name=monto_cupon]').value.trim();
+                                                 const minimo = form.querySelector('[name=monto_compra_minima]').value.trim();
+                                                 const fecha = form.querySelector('[name=fecha_vencimiento]').value;
+
+                                                 if (!codigo) this.errores.codigo_cupon = true;
+                                                 if (!monto) this.errores.monto_cupon = true;
+                                                 if (!minimo) this.errores.monto_compra_minima = true;
+                                                 if (!fecha) this.errores.fecha_vencimiento = true;
+
+                                                 if (Object.keys(this.errores).length > 0) {
+                                                     this.submitting = false;
+                                                     return;
+                                                 }
+
+                                                 const formData = new FormData(form);
+
+                                                 try {
+                                                     const response = await fetch(form.action, {
+                                                         method: 'POST',
+                                                         body: formData,
+                                                         headers: {
+                                                             'X-Requested-With': 'XMLHttpRequest',
+                                                             'Accept': 'application/json',
+                                                         },
+                                                     });
+
+                                                     const data = await response.json();
+
+                                                     if (response.ok) {
+                                                         window.dispatchEvent(new CustomEvent('toast', {
+                                                             detail: { type: 'success', message: data.message || 'Cupón actualizado correctamente.' }
+                                                         }));
+                                                         setTimeout(() => window.location.reload(), 500);
+                                                     } else {
+                                                         if (data.errors) {
+                                                             Object.keys(data.errors).forEach(key => {
+                                                                 this.errores[key] = true;
+                                                             });
+                                                             const todos = Object.values(data.errors).flat();
+                                                             window.dispatchEvent(new CustomEvent('toast', {
+                                                                 detail: { type: 'error', message: todos }
+                                                             }));
+                                                         } else if (data.message) {
+                                                             window.dispatchEvent(new CustomEvent('toast', {
+                                                                 detail: { type: 'error', message: data.message }
+                                                             }));
+                                                         }
+                                                         this.submitting = false;
+                                                     }
+                                                 } catch (error) {
+                                                     window.dispatchEvent(new CustomEvent('toast', {
+                                                         detail: { type: 'error', message: 'Error de conexión. Intenta de nuevo.' }
+                                                     }));
+                                                     this.submitting = false;
+                                                 }
                                              }
                                          }"
                                          x-init="initFecha()">
                                         <div @click="editModal = false" class="absolute inset-0 bg-gray-900/40 backdrop-blur-md"></div>
-                                        <div class="relative bg-white rounded-[2.5rem] p-10 max-w-2xl w-full shadow-2xl max-h-[92vh] overflow-y-auto">
+                                        <div class="relative bg-white rounded-[2.5rem] p-10 max-w-[610px] w-full shadow-2xl max-h-[92vh] overflow-y-auto">
 
                                             <div class="flex justify-between items-start mb-8">
                                                 <div>
                                                     <h2 class="text-2xl font-bold text-gray-900">Editar Cupón</h2>
-                                                    <p class="text-gray-500 mt-1 text-sm font-medium">Modifica los datos del cupón.</p>
                                                 </div>
                                                 <button @click="editModal = false" class="text-gray-500 transition -mt-1">
                                                     <x-heroicon-o-x-mark class="w-6 h-6" />
                                                 </button>
                                             </div>
 
-                                            <form action="{{ route('admin.cupones.update', $cupon->id_cupon) }}" method="POST" class="space-y-4">
+                                            <form @submit.prevent="submitEdit($event)" action="{{ route('admin.cupones.update', $cupon->id_cupon) }}" method="POST" class="space-y-4">
                                                 @csrf @method('PUT')
 
-                                                <div>
-                                                    <label class="block text-sm font-bold text-gray-800 mb-2 ml-1">Código:</label>
-                                                    <input type="text" name="codigo_cupon" value="{{ $cupon->codigo_cupon }}" required
-                                                        class="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:border-gray-400 text-[14px] font-mono font-bold uppercase tracking-widest transition-colors">
+                                                <div class="flex items-center gap-2">
+                                                    <label class="text-[14px] font-bold text-gray-800 shrink-0">Código del cupón:</label>
+                                                    <input type="text" name="codigo_cupon" value="{{ $cupon->codigo_cupon }}"
+                                                        @input="delete errores.codigo_cupon"
+                                                        class="w-full px-3 py-1.5 bg-gray-50 border rounded-full focus:outline-none focus:border-gray-400 text-[14px] font-medium transition-colors"
+                                                        :class="errores.codigo_cupon ? 'border-rose-500' : 'border-gray-200'">
                                                 </div>
 
-                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                                    <div>
-                                                        <label class="block text-sm font-bold text-gray-800 mb-2 ml-1">Descuento (S/):</label>
-                                                        <input type="text" inputmode="decimal" name="monto_cupon" value="{{ $cupon->monto_cupon }}" required
-                                                            oninput="this.value = this.value.replace(/[^0-9.]/g, '')"
-                                                            class="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:border-gray-400 text-[14px] font-medium transition-colors">
+                                                <div class="flex items-center gap-4">
+                                                    <div class="flex items-center gap-2 w-[225px]">
+                                                        <label class="text-[14px] font-bold text-gray-800 shrink-0">Valor del cupón:</label>
+                                                        <div class="relative w-full">
+                                                            <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none text-[14px]">S/</span>
+                                                            <input type="text" inputmode="decimal" name="monto_cupon" value="{{ $cupon->monto_cupon }}"
+                                                                @input="delete errores.monto_cupon"
+                                                                oninput="this.value = this.value.replace(/[^0-9.]/g, '')"
+                                                                class="w-full pl-9 pr-3 py-1.5 bg-gray-50 border rounded-full focus:outline-none focus:border-gray-400 text-[14px] font-medium transition-colors"
+                                                                :class="errores.monto_cupon ? 'border-rose-500' : 'border-gray-200'">
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <label class="block text-sm font-bold text-gray-800 mb-2 ml-1">Mínimo (S/):</label>
-                                                        <input type="text" inputmode="decimal" name="monto_compra_minima" value="{{ $cupon->monto_compra_minima }}" required
-                                                            oninput="this.value = this.value.replace(/[^0-9.]/g, '')"
-                                                            class="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:border-gray-400 text-[14px] font-medium transition-colors">
+                                                    <div class="flex items-center gap-2 flex-1">
+                                                        <label class="text-[14px] font-bold text-gray-800 shrink-0">Monto mínimo de compra:</label>
+                                                        <div class="relative w-full">
+                                                            <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none text-[14px]">S/</span>
+                                                            <input type="text" inputmode="decimal" name="monto_compra_minima" value="{{ $cupon->monto_compra_minima }}"
+                                                                @input="delete errores.monto_compra_minima"
+                                                                oninput="this.value = this.value.replace(/[^0-9.]/g, '')"
+                                                                class="w-full pl-9 pr-3 py-1.5 bg-gray-50 border rounded-full focus:outline-none focus:border-gray-400 text-[14px] font-medium transition-colors"
+                                                                :class="errores.monto_compra_minima ? 'border-rose-500' : 'border-gray-200'">
+                                                        </div>
                                                     </div>
                                                 </div>
 
-                                                {{-- Fecha + Estado --}}
-                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                                    {{-- Fecha con flatpickr --}}
-                                                    <div>
-                                                        <label class="block text-sm font-bold text-gray-800 mb-2 ml-1">Fecha de Vencimiento:</label>
+                                                <div class="flex items-center gap-4">
+                                                    <!-- Fecha con flex-[1.5] para tener más peso que el estado pero adaptarse -->
+                                                    <div class="flex items-center gap-2 flex-[1.5] min-w-[230px]">
+                                                        <label class="text-[14px] font-bold text-gray-800 shrink-0">Fecha de vencimiento:</label>
 
                                                         <input type="text" name="fecha_vencimiento"
                                                                x-ref="fechaEditInput"
@@ -414,7 +483,8 @@
                                                                class="sr-only" readonly>
 
                                                         <button type="button" x-ref="fechaEditBtn"
-                                                            class="w-full flex items-center justify-between gap-2 pl-4 pr-4 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-sm text-gray-600 cursor-pointer focus:outline-none focus:border-gray-400 transition-colors">
+                                                            class="w-full flex items-center justify-between gap-2 pl-4 pr-3 py-1.5 border rounded-full bg-gray-50 text-[14px] cursor-pointer focus:outline-none focus:border-gray-400 transition-colors"
+                                                            :class="errores.fecha_vencimiento ? 'border-rose-500' : 'border-gray-200 text-gray-600'">
                                                             <span x-ref="fechaEditTexto">
                                                                 {{ \Carbon\Carbon::parse($cupon->fecha_vencimiento)->format('d/m/Y') }}
                                                             </span>
@@ -422,13 +492,13 @@
                                                         </button>
                                                     </div>
 
-                                                    {{-- Estado --}}
-                                                    <div x-data="{ open: false }">
-                                                        <label class="block text-sm font-bold text-gray-800 mb-2 ml-1">Estado:</label>
+                                                    <!-- Estado con flex-1 -->
+                                                    <div class="flex items-center gap-2 flex-1 min-w-[140px]" x-data="{ open: false }">
+                                                        <label class="text-[14px] font-bold text-gray-800 shrink-0">Estado:</label>
                                                         <input type="hidden" name="estado_cupon" :value="estadoEdit">
                                                         <div class="relative w-full">
                                                             <button type="button" @click="open = !open"
-                                                                class="w-full flex items-center justify-between gap-2 pl-4 pr-4 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-sm text-gray-600 cursor-pointer focus:outline-none focus:border-gray-400 transition-colors">
+                                                                class="w-full flex items-center justify-between gap-2 pl-4 pr-3 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-[14px] text-gray-600 cursor-pointer focus:outline-none focus:border-gray-400 transition-colors">
                                                                 <span x-text="estadoTextoEdit"></span>
                                                                 <x-heroicon-o-chevron-down class="w-4 h-4 shrink-0" />
                                                             </button>
@@ -461,9 +531,10 @@
                                                         class="flex-1 py-3.5 bg-gray-100 text-gray-700 font-bold rounded-full text-sm transition">
                                                         Cancelar
                                                     </button>
-                                                    <button type="submit"
-                                                        class="flex-1 py-3.5 bg-black text-white font-bold rounded-full text-sm transition">
-                                                        Aceptar
+                                                    <button type="submit" :disabled="submitting"
+                                                        class="flex-1 py-3.5 bg-black text-white font-bold rounded-full text-sm transition disabled:opacity-50 disabled:cursor-not-allowed">
+                                                        <span x-show="!submitting">Aceptar</span>
+                                                        <span x-show="submitting" x-cloak>Guardando...</span>
                                                     </button>
                                                 </div>
                                             </form>
@@ -489,13 +560,14 @@
             </div>
         </div>
 
-        {{-- ============ MODAL CREAR ============ --}}
         <template x-if="createModal">
             <div class="fixed inset-0 z-[100] flex items-center justify-center p-4"
                  x-data="{
                      estadoCrear: '1',
                      estadoTextoCrear: 'Activo',
                      fechaCrear: '',
+                     submitting: false,
+                     errores: {},
                      initFechaCrear() {
                          const input = this.$refs.fechaCrearInput;
                          const btn = this.$refs.fechaCrearBtn;
@@ -520,6 +592,7 @@
                                  } else {
                                      texto.textContent = 'Seleccionar';
                                  }
+                                 delete this.errores.fecha_vencimiento;
                              },
                              onOpen: (selectedDates, dateStr, instance) => {
                                  setTimeout(() => instance._positionCalendar(), 10);
@@ -530,54 +603,126 @@
                              e.preventDefault();
                              picker.open();
                          });
+                     },
+                     async submitCreate(e) {
+                         if (this.submitting) return;
+                         this.submitting = true;
+                         this.errores = {};
+
+                         const form = e.target;
+
+                         const codigo = form.querySelector('[name=codigo_cupon]').value.trim();
+                         const monto = form.querySelector('[name=monto_cupon]').value.trim();
+                         const minimo = form.querySelector('[name=monto_compra_minima]').value.trim();
+                         const fecha = form.querySelector('[name=fecha_vencimiento]').value;
+
+                         if (!codigo) this.errores.codigo_cupon = true;
+                         if (!monto) this.errores.monto_cupon = true;
+                         if (!minimo) this.errores.monto_compra_minima = true;
+                         if (!fecha) this.errores.fecha_vencimiento = true;
+
+                         if (Object.keys(this.errores).length > 0) {
+                             this.submitting = false;
+                             return;
+                         }
+
+                         const formData = new FormData(form);
+
+                         try {
+                             const response = await fetch(form.action, {
+                                 method: 'POST',
+                                 body: formData,
+                                 headers: {
+                                     'X-Requested-With': 'XMLHttpRequest',
+                                     'Accept': 'application/json',
+                                 },
+                             });
+
+                             const data = await response.json();
+
+                             if (response.ok) {
+                                 window.dispatchEvent(new CustomEvent('toast', {
+                                     detail: { type: 'success', message: data.message || 'Cupón creado correctamente.' }
+                                 }));
+                                 setTimeout(() => window.location.reload(), 500);
+                             } else {
+                                 if (data.errors) {
+                                     Object.keys(data.errors).forEach(key => {
+                                         this.errores[key] = true;
+                                     });
+                                     const todos = Object.values(data.errors).flat();
+                                     window.dispatchEvent(new CustomEvent('toast', {
+                                         detail: { type: 'error', message: todos }
+                                     }));
+                                 } else if (data.message) {
+                                     window.dispatchEvent(new CustomEvent('toast', {
+                                         detail: { type: 'error', message: data.message }
+                                     }));
+                                 }
+                                 this.submitting = false;
+                             }
+                         } catch (error) {
+                             window.dispatchEvent(new CustomEvent('toast', {
+                                 detail: { type: 'error', message: 'Error de conexión. Intenta de nuevo.' }
+                             }));
+                             this.submitting = false;
+                         }
                      }
                  }"
                  x-init="initFechaCrear()">
                 <div @click="createModal = false" class="absolute inset-0 bg-gray-900/40 backdrop-blur-md"></div>
-                <div class="relative bg-white rounded-[2.5rem] p-10 max-w-2xl w-full shadow-2xl max-h-[92vh] overflow-y-auto">
+                <div class="relative bg-white rounded-[2.5rem] p-10 max-w-[610px] w-full shadow-2xl max-h-[92vh] overflow-y-auto">
 
                     <div class="flex justify-between items-start mb-8">
                         <div>
                             <h2 class="text-2xl font-bold text-gray-900">Nuevo Cupón</h2>
-                            <p class="text-gray-500 mt-1 text-sm font-medium">Crea un código de descuento.</p>
                         </div>
                         <button @click="createModal = false" class="text-gray-500 transition -mt-1">
                             <x-heroicon-o-x-mark class="w-6 h-6" />
                         </button>
                     </div>
 
-                    <form action="{{ route('admin.cupones.store') }}" method="POST" class="space-y-4">
+                    <form @submit.prevent="submitCreate($event)" action="{{ route('admin.cupones.store') }}" method="POST" class="space-y-4">
                         @csrf
 
-                        <div>
-                            <label class="block text-sm font-bold text-gray-800 mb-2 ml-1">Código:</label>
-                            <input type="text" name="codigo_cupon" value="{{ old('codigo_cupon') }}" required autofocus
-                                placeholder="Ej: VERANO2025"
-                                class="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:border-gray-400 text-[14px] font-mono font-bold uppercase tracking-widest transition-colors">
+                        <div class="flex items-center gap-2">
+                            <label class="text-[14px] font-bold text-gray-800 shrink-0">Código del cupón:</label>
+                            <input type="text" name="codigo_cupon" value="{{ old('codigo_cupon') }}" autofocus
+                                @input="delete errores.codigo_cupon"
+                                class="w-full px-3 py-1.5 bg-gray-50 border rounded-full focus:outline-none focus:border-gray-400 text-[14px] font-medium transition-colors"
+                                :class="errores.codigo_cupon ? 'border-rose-500' : 'border-gray-200'">
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <div>
-                                <label class="block text-sm font-bold text-gray-800 mb-2 ml-1">Descuento (S/):</label>
-                                <input type="text" inputmode="decimal" name="monto_cupon" required
-                                    placeholder="0.00" value="{{ old('monto_cupon') }}"
-                                    oninput="this.value = this.value.replace(/[^0-9.]/g, '')"
-                                    class="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:border-gray-400 text-[14px] font-medium transition-colors">
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-2 w-[225px]">
+                                <label class="text-[14px] font-bold text-gray-800 shrink-0">Valor del cupón:</label>
+                                <div class="relative w-full">
+                                    <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none text-[14px]">S/</span>
+                                    <input type="text" inputmode="decimal" name="monto_cupon"
+                                        value="{{ old('monto_cupon') }}"
+                                        @input="delete errores.monto_cupon"
+                                        oninput="this.value = this.value.replace(/[^0-9.]/g, '')"
+                                        class="w-full pl-9 pr-3 py-1.5 bg-gray-50 border rounded-full focus:outline-none focus:border-gray-400 text-[14px] font-medium transition-colors"
+                                        :class="errores.monto_cupon ? 'border-rose-500' : 'border-gray-200'">
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-sm font-bold text-gray-800 mb-2 ml-1">Mínimo (S/):</label>
-                                <input type="text" inputmode="decimal" name="monto_compra_minima" required
-                                    placeholder="0.00" value="{{ old('monto_compra_minima') }}"
-                                    oninput="this.value = this.value.replace(/[^0-9.]/g, '')"
-                                    class="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:border-gray-400 text-[14px] font-medium transition-colors">
+                            <div class="flex items-center gap-2 flex-1">
+                                <label class="text-[14px] font-bold text-gray-800 shrink-0">Monto mínimo de compra:</label>
+                                <div class="relative w-full">
+                                    <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none text-[14px]">S/</span>
+                                    <input type="text" inputmode="decimal" name="monto_compra_minima"
+                                        value="{{ old('monto_compra_minima') }}"
+                                        @input="delete errores.monto_compra_minima"
+                                        oninput="this.value = this.value.replace(/[^0-9.]/g, '')"
+                                        class="w-full pl-9 pr-3 py-1.5 bg-gray-50 border rounded-full focus:outline-none focus:border-gray-400 text-[14px] font-medium transition-colors"
+                                        :class="errores.monto_compra_minima ? 'border-rose-500' : 'border-gray-200'">
+                                </div>
                             </div>
                         </div>
 
-                        {{-- Fecha + Estado --}}
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {{-- Fecha con flatpickr --}}
-                            <div>
-                                <label class="block text-sm font-bold text-gray-800 mb-2 ml-1">Fecha de Vencimiento:</label>
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-2 flex-[1.5] min-w-[230px]">
+                                <label class="text-[14px] font-bold text-gray-800 shrink-0">Fecha de vencimiento:</label>
 
                                 <input type="text" name="fecha_vencimiento"
                                        x-ref="fechaCrearInput"
@@ -585,19 +730,19 @@
                                        class="sr-only" readonly>
 
                                 <button type="button" x-ref="fechaCrearBtn"
-                                    class="w-full flex items-center justify-between gap-2 pl-4 pr-4 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-sm text-gray-600 cursor-pointer focus:outline-none focus:border-gray-400 transition-colors">
+                                    class="w-full flex items-center justify-between gap-2 pl-4 pr-3 py-1.5 border rounded-full bg-gray-50 text-[14px] cursor-pointer focus:outline-none focus:border-gray-400 transition-colors"
+                                    :class="errores.fecha_vencimiento ? 'border-rose-500' : 'border-gray-200 text-gray-600'">
                                     <span x-ref="fechaCrearTexto">Seleccionar</span>
                                     <x-heroicon-o-chevron-down class="w-4 h-4 shrink-0" />
                                 </button>
                             </div>
 
-                            {{-- Estado --}}
-                            <div x-data="{ open: false }">
-                                <label class="block text-sm font-bold text-gray-800 mb-2 ml-1">Estado:</label>
+                            <div class="flex items-center gap-2 flex-1 min-w-[140px]" x-data="{ open: false }">
+                                <label class="text-[14px] font-bold text-gray-800 shrink-0">Estado:</label>
                                 <input type="hidden" name="estado_cupon" :value="estadoCrear">
                                 <div class="relative w-full">
                                     <button type="button" @click="open = !open"
-                                        class="w-full flex items-center justify-between gap-2 pl-4 pr-4 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-sm text-gray-600 cursor-pointer focus:outline-none focus:border-gray-400 transition-colors">
+                                        class="w-full flex items-center justify-between gap-2 pl-4 pr-3 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-[14px] text-gray-600 cursor-pointer focus:outline-none focus:border-gray-400 transition-colors">
                                         <span x-text="estadoTextoCrear"></span>
                                         <x-heroicon-o-chevron-down class="w-4 h-4 shrink-0" />
                                     </button>
@@ -630,9 +775,10 @@
                                 class="flex-1 py-3.5 bg-gray-100 text-gray-700 font-bold rounded-full text-sm transition">
                                 Cancelar
                             </button>
-                            <button type="submit"
-                                class="flex-1 py-3.5 bg-black text-white font-bold rounded-full text-sm transition">
-                                Aceptar
+                            <button type="submit" :disabled="submitting"
+                                class="flex-1 py-3.5 bg-black text-white font-bold rounded-full text-sm transition disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span x-show="!submitting">Aceptar</span>
+                                <span x-show="submitting" x-cloak>Guardando...</span>
                             </button>
                         </div>
                     </form>
@@ -640,7 +786,6 @@
             </div>
         </template>
 
-        {{-- MODAL ELIMINAR --}}
         <template x-if="deleteModal">
             <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
                 <div @click="deleteModal = false" class="absolute inset-0 bg-gray-900/40 backdrop-blur-md"></div>
@@ -669,7 +814,6 @@
 
     </div>
 
-    {{-- Flatpickr JS --}}
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
     <script>
@@ -677,7 +821,6 @@
             flatpickr.localize(flatpickr.l10ns.es);
             flatpickr.l10ns.es.firstDayOfWeek = 0;
 
-            // Filtro de fecha
             const inputFechaFiltro = document.getElementById('fechaFiltro');
             const botonFechaFiltro = document.getElementById('fechaBtn');
             const textoFechaFiltro = document.getElementById('fechaTexto');

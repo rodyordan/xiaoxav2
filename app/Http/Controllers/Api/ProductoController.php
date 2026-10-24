@@ -11,15 +11,11 @@ use Illuminate\Support\Facades\Log;
 
 class ProductoController extends Controller
 {
-    /**
-     * Listar productos con paginación
-     */
     public function index(Request $request)
     {
         $query = Producto::activos()
             ->with(['categoria', 'variantes.imagenes']);
 
-        // ─── Filtro por categoría (acepta ID o nombre) ─────────────────
         if ($request->filled('categoria')) {
             $cat = $request->categoria;
 
@@ -50,20 +46,16 @@ class ProductoController extends Controller
             $query->buscar($request->busqueda);
         }
 
-        // ─── Filtro por promociones (igual que la web) ────────────────
         if ($request->boolean('promocion')) {
             $query->enOferta();
         }
 
-        // ─── Filtro "nuevo" → ordenar por fecha desc ──────────────────
         $esNuevo = $request->boolean('nuevo');
 
-        // ─── Solo productos con stock ────────────────────────────────
         if ($request->boolean('con_stock', true)) {
             $query->conStock();
         }
 
-        // ─── Ordenamiento ────────────────────────────────────────────
         if ($esNuevo) {
             $query->orderBy('created_at', 'desc');
         } else {
@@ -81,7 +73,6 @@ class ProductoController extends Controller
             $query->orderBy($orden, $direccion);
         }
 
-        // ─── Paginación ──────────────────────────────────────────────
         $productos = $query->paginate($request->get('limit', 10));
 
         return response()->json([
@@ -93,9 +84,6 @@ class ProductoController extends Controller
         ]);
     }
 
-    /**
-     * Obtener un producto por ID
-     */
     public function show($id)
     {
         $producto = Producto::activos()
@@ -115,9 +103,6 @@ class ProductoController extends Controller
         ]);
     }
 
-    /**
-     * Obtener variantes de un producto
-     */
     public function variantes($id)
     {
         $producto = Producto::find($id);
@@ -140,9 +125,6 @@ class ProductoController extends Controller
         ]);
     }
 
-    /**
-     * Obtener productos en oferta
-     */
     public function ofertas(Request $request)
     {
         try {
@@ -170,9 +152,6 @@ class ProductoController extends Controller
         }
     }
 
-    /**
-     * Buscar productos
-     */
     public function buscar(Request $request)
     {
         try {
@@ -204,9 +183,6 @@ class ProductoController extends Controller
         }
     }
 
-    /**
-     * Filtrar productos por talla
-     */
     public function porTalla(Request $request, $talla)
     {
         try {
@@ -236,9 +212,6 @@ class ProductoController extends Controller
         }
     }
 
-    /**
-     * Filtrar productos por color
-     */
     public function porColor(Request $request, $color)
     {
         try {

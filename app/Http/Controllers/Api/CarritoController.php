@@ -198,15 +198,26 @@ class CarritoController extends Controller
     // CUPONES
     // ══════════════════════════════════════════════════════════
 
+    /**
+     * Lista los cupones disponibles.
+     * - Si el usuario está logueado: solo los que NO ha usado
+     * - Si NO está logueado: todos los activos y vigentes
+     */
     public function cuponesDisponibles()
     {
-        $idUsuario = Auth::id();
+        $idUsuario = Auth::id(); // null si no está logueado
 
-        $cupones = Cupon::where('estado_cupon', 1)
-            ->where('fecha_vencimiento', '>=', now())
-            ->whereDoesntHave('usos', function ($q) use ($idUsuario) {
+        $query = Cupon::where('estado_cupon', 1)
+            ->where('fecha_vencimiento', '>=', now());
+
+        // Solo excluir los usados si hay usuario logueado
+        if ($idUsuario) {
+            $query->whereDoesntHave('usos', function ($q) use ($idUsuario) {
                 $q->where('id_usuario', $idUsuario);
-            })
+            });
+        }
+
+        $cupones = $query
             ->orderBy('fecha_vencimiento', 'asc')
             ->get()
             ->map(function ($cupon) {

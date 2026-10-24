@@ -229,15 +229,6 @@
                         </div>
                     @else
 
-                        @php
-                            $colores = [
-                                'Pendiente'          => 'bg-amber-50 text-amber-700 border-amber-200',
-                                'En camino'          => 'bg-indigo-50 text-indigo-700 border-indigo-200',
-                                'Listo para recoger' => 'bg-purple-50 text-purple-700 border-purple-200',
-                                'Entregado'          => 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                            ];
-                        @endphp
-
                         <div class="space-y-3">
 
                             @foreach($pedidos as $pedido)
@@ -283,9 +274,8 @@
                                         </div>
 
                                         <div class="flex items-center gap-3 shrink-0">
-                                            <span class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide rounded-full border {{ $colores[$pedido->estado_pedido] ?? '' }}">
-                                                {{ $pedido->estado_pedido }}
-                                            </span>
+                                            {{-- Texto Ver Detalles en lugar del badge --}}
+                                            <span class="text-[12px] font-bold text-gray-700">Ver detalles</span>
 
                                             <svg :class="open ? 'rotate-180' : ''" class="w-3 h-3 text-gray-700 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
@@ -297,16 +287,18 @@
                                     <div x-show="open" x-collapse class="border-t border-gray-200 px-12 py-10 space-y-7 bg-gray-50/50">
 
                                         {{-- SEGUIMIENTO --}}
-                                        <div class="px-4">
-                                            <div class="flex items-start">
+                                        <div class="bg-white border border-gray-200 rounded-lg px-5 py-6">
+                                            <p class="text-[10px] font-black text-black uppercase tracking-widest mb-6">Seguimiento</p>
+
+                                            <div class="flex items-start w-full px-2">
                                                 @foreach($pasos as $i => $paso)
                                                     @php
                                                         $completado = $i <= $indiceActual;
                                                     @endphp
 
-                                                    <div class="flex flex-col items-center" style="width: 56px;">
+                                                    <div class="flex flex-col items-center relative z-10" style="width: 56px;">
                                                         <div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0
-                                                            {{ $completado ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-400' }}">
+                                                            {{ $completado ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-400' }}">
                                                             @if($paso['icono'] === 'clock')
                                                                 <x-heroicon-s-clock class="w-4 h-4" />
                                                             @elseif($paso['icono'] === 'truck')
@@ -318,7 +310,7 @@
                                                             @endif
                                                         </div>
                                                         <span class="text-[10px] mt-1.5 text-center leading-tight whitespace-nowrap
-                                                            {{ $completado ? 'font-bold text-indigo-600' : 'font-normal text-gray-400' }}">
+                                                            {{ $completado ? 'font-bold text-gray-900' : 'font-normal text-gray-400' }}">
                                                             @if($paso['nombre'] === 'Listo para recoger')
                                                                 Listo para<br>recoger
                                                             @else
@@ -328,8 +320,8 @@
                                                     </div>
 
                                                     @if($i < count($pasos) - 1)
-                                                        <div class="flex-1 mt-[18px] h-px
-                                                            {{ $i < $indiceActual ? 'bg-indigo-600' : 'bg-gray-300' }}"></div>
+                                                        <div class="flex-1 mt-[16.5px] h-[3px] -mx-[10px] w-[calc(100%+20px)] relative z-0
+                                                            {{ $i < $indiceActual ? 'bg-gray-900' : 'bg-gray-100' }}"></div>
                                                     @endif
                                                 @endforeach
                                             </div>
@@ -375,6 +367,18 @@
                                                     @endforeach
                                                 </tbody>
                                                 <tfoot>
+                                                    @if($pedido->descuento > 0)
+                                                        <tr class="border-t border-gray-100">
+                                                            <td class="px-5 py-3"></td>
+                                                            <td class="px-2 py-3"></td>
+                                                            <td class="px-2 py-3 text-center text-[11px] text-black">
+                                                                Descuento
+                                                            </td>
+                                                            <td class="px-5 py-3 text-right text-[11px] text-black whitespace-nowrap">
+                                                                - S/ {{ number_format($pedido->descuento, 2) }}
+                                                            </td>
+                                                        </tr>
+                                                    @endif
                                                     <tr class="border-t border-gray-200">
                                                         <td class="px-5 py-4"></td>
                                                         <td class="px-2 py-4"></td>

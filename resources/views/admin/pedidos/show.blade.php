@@ -180,13 +180,10 @@
                                         <tr class="border-t border-gray-200">
                                             <td class="px-5 py-4"></td>
                                             <td class="px-2 py-4"></td>
-                                            <td class="px-2 py-4 text-center text-base font-normal text-emerald-600">
+                                            <td class="px-2 py-4 text-center text-base font-normal text-gray-800">
                                                 Descuento
-                                                @if($pedido->cupon)
-                                                    ({{ $pedido->cupon->codigo_cupon }})
-                                                @endif
                                             </td>
-                                            <td class="px-5 py-4 text-right text-base font-normal text-emerald-600 whitespace-nowrap">
+                                            <td class="px-5 py-4 text-right text-base font-normal text-gray-800 whitespace-nowrap">
                                                 - S/ {{ number_format($pedido->descuento, 2) }}
                                             </td>
                                         </tr>
@@ -241,11 +238,11 @@
                         <div x-init="init({{ Js::from($pasos) }}, {{ $esRetiroTienda ? 'true' : 'false' }})"></div>
 
                         {{-- PASOS (colores negros) --}}
-                        <div class="flex items-start">
+                        <div class="flex items-start w-full">
                             <template x-for="(paso, i) in pasos" :key="i">
                                 <div class="contents">
-                                    <div class="flex flex-col items-center" style="width: 56px;">
-
+                                    {{-- Contenedor del ícono --}}
+                                    <div class="flex flex-col items-center relative z-10" style="width: 56px;">
                                         <button type="button"
                                             @click="avanzarA(i)"
                                             :disabled="i <= indiceActual || i > indiceActual + 1"
@@ -276,9 +273,10 @@
                                         </span>
                                     </div>
 
+                                    {{-- Línea conectora --}}
                                     <template x-if="i < pasos.length - 1">
-                                        <div class="flex-1 mt-[18px] h-px"
-                                            :class="i < indiceActual ? 'bg-gray-900' : 'bg-gray-300'"></div>
+                                        <div class="flex-1 mt-[16.5px] h-[3px] -mx-[10px] w-[calc(100%+20px)] relative z-0"
+                                            :class="i < indiceActual ? 'bg-gray-900' : 'bg-gray-100'"></div>
                                     </template>
                                 </div>
                             </template>
@@ -303,7 +301,6 @@
                                 <label class="text-[14px] font-bold text-gray-800 shrink-0">Fecha:</label>
                                 <input type="text" name="tiempo_entrega"
                                     value="{{ $pedido->tiempo_entrega ?? '' }}"
-                                    placeholder="Ej: 3 días hábiles"
                                     class="flex-1 px-4 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-[14px] text-gray-600 focus:outline-none focus:border-gray-400 transition-colors">
                             </div>
 
@@ -311,13 +308,12 @@
                             <div class="flex items-start gap-2">
                                 <label class="text-[14px] font-bold text-gray-800 shrink-0 mt-3">Dirección:</label>
                                 <textarea name="direccion_entrega" rows="3"
-                                    placeholder="Dirección de entrega o agencia Shalom"
                                     class="flex-1 px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 text-[14px] text-gray-600 focus:outline-none focus:border-gray-400 transition-colors resize-none">{{ $pedido->direccion_entrega ?? '' }}</textarea>
                             </div>
 
-                            {{-- Guía (archivo) --}}
-                            <div class="flex items-start gap-2" x-data="archivoGuia()">
-                                <label class="text-[14px] font-bold text-gray-800 shrink-0 mt-3">Guía:</label>
+                            {{-- Ticket (archivo) --}}
+                            <div class="flex flex-col gap-2" x-data="archivoGuia()">
+                                <label class="text-[14px] font-bold text-gray-800">Ticket de envío:</label>
                                 <div class="flex-1 min-w-0">
                                     <div class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-2 py-1.5 max-w-full">
                                         <span class="text-[13px] text-gray-500 truncate max-w-[200px]" x-text="nombreArchivo || 'Ningún archivo seleccionado'"></span>

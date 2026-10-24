@@ -9,22 +9,18 @@ use App\Http\Controllers\Controller;
 
 class CuponController extends Controller
 {
-    // ── LISTAR ──────────────────────────────────────────────
     public function index(Request $request)
     {
         $query = Cupon::query();
 
-        // Filtro: buscar por código
         if ($request->filled('buscar')) {
             $query->where('codigo_cupon', 'like', '%' . $request->buscar . '%');
         }
 
-        // Filtro: estado
         if ($request->filled('estado')) {
             $query->where('estado_cupon', $request->estado);
         }
 
-        // Filtro: fecha de vencimiento
         if ($request->filled('fecha')) {
             $query->whereDate('fecha_vencimiento', $request->fecha);
         }
@@ -36,47 +32,83 @@ class CuponController extends Controller
         return view('admin.cupones.index', compact('cupones'));
     }
 
-    // ── CREAR ───────────────────────────────────────────────
     public function store(Request $request)
     {
+        $request->merge([
+            'codigo_cupon' => mb_strtoupper(trim((string) $request->codigo_cupon), 'UTF-8'),
+        ]);
+
         $data = $request->validate([
             'codigo_cupon'        => 'required|unique:cupones,codigo_cupon|max:50',
-            'monto_cupon'         => 'required|numeric|min:0',
+            'monto_cupon'         => 'required|numeric|min:0|lt:monto_compra_minima',
             'monto_compra_minima' => 'required|numeric|min:0',
             'fecha_vencimiento'   => 'required|date|after:today',
             'estado_cupon'        => 'nullable|boolean',
+        ], [
+            'codigo_cupon.required' => 'El código del cupón es obligatorio.',
+            'codigo_cupon.unique'   => 'Ya existe un cupón con ese código.',
+            'codigo_cupon.max'      => 'El código del cupón no puede tener más de 50 caracteres.',
+            'monto_cupon.required'  => 'El valor del cupón es obligatorio.',
+            'monto_cupon.numeric'   => 'El valor del cupón debe ser un número.',
+            'monto_cupon.min'       => 'El valor del cupón no puede ser negativo.',
+            'monto_cupon.lt'        => 'El valor del cupón debe ser menor que el monto mínimo de compra.',
+            'monto_compra_minima.required' => 'El monto mínimo de compra es obligatorio.',
+            'monto_compra_minima.numeric'  => 'El monto mínimo de compra debe ser un número.',
+            'monto_compra_minima.min'      => 'El monto mínimo de compra no puede ser negativo.',
+            'fecha_vencimiento.required' => 'La fecha de vencimiento es obligatoria.',
+            'fecha_vencimiento.date'     => 'La fecha de vencimiento no es válida.',
+            'fecha_vencimiento.after'    => 'La fecha de vencimiento debe ser posterior a hoy.',
         ]);
 
-        $data['codigo_cupon'] = strtoupper(trim($data['codigo_cupon']));
         $data['estado_cupon'] = $request->input('estado_cupon', 1);
 
         Cupon::create($data);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Cupón creado correctamente.',
+            ]);
+        }
 
         return redirect()->route('admin.cupones.index')
             ->with('success', 'Cupón creado correctamente.');
     }
 
-    // ── EDITAR (vista) ──────────────────────────────────────
     public function edit($id)
     {
         $cupon = Cupon::findOrFail($id);
         return view('admin.cupones.edit', compact('cupon'));
     }
 
-    // ── ACTUALIZAR ──────────────────────────────────────────
     public function update(Request $request, $id)
     {
         $cupon = Cupon::findOrFail($id);
 
+        $request->merge([
+            'codigo_cupon' => mb_strtoupper(trim((string) $request->codigo_cupon), 'UTF-8'),
+        ]);
+
         $data = $request->validate([
             'codigo_cupon'        => 'required|unique:cupones,codigo_cupon,' . $id . ',id_cupon|max:50',
-            'monto_cupon'         => 'required|numeric|min:0',
+            'monto_cupon'         => 'required|numeric|min:0|lt:monto_compra_minima',
             'monto_compra_minima' => 'required|numeric|min:0',
             'fecha_vencimiento'   => 'required|date',
             'estado_cupon'        => 'nullable|boolean',
+        ], [
+            'codigo_cupon.required' => 'El código del cupón es obligatorio.',
+            'codigo_cupon.unique'   => 'Ya existe un cupón con ese código.',
+            'codigo_cupon.max'      => 'El código del cupón no puede tener más de 50 caracteres.',
+            'monto_cupon.required'  => 'El valor del cupón es obligatorio.',
+            'monto_cupon.numeric'   => 'El valor del cupón debe ser un número.',
+            'monto_cupon.min'       => 'El valor del cupón no puede ser negativo.',
+            'monto_cupon.lt'        => 'El valor del cupón debe ser menor que el monto mínimo de compra.',
+            'monto_compra_minima.required' => 'El monto mínimo de compra es obligatorio.',
+            'monto_compra_minima.numeric'  => 'El monto mínimo de compra debe ser un número.',
+            'monto_compra_minima.min'      => 'El monto mínimo de compra no puede ser negativo.',
+            'fecha_vencimiento.required' => 'La fecha de vencimiento es obligatoria.',
+            'fecha_vencimiento.date'     => 'La fecha de vencimiento no es válida.',
         ]);
-
-        $data['codigo_cupon'] = strtoupper(trim($data['codigo_cupon']));
 
         if ($request->has('estado_cupon')) {
             $data['estado_cupon'] = $request->estado_cupon;
@@ -84,10 +116,16 @@ class CuponController extends Controller
 
         $cupon->update($data);
 
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Cupón actualizado correctamente.',
+            ]);
+        }
+
         return back()->with('success', 'Cupón actualizado correctamente.');
     }
 
-    // ── ACTIVAR / DESACTIVAR ────────────────────────────────
     public function toggle($id)
     {
         $cupon = Cupon::findOrFail($id);
@@ -100,12 +138,10 @@ class CuponController extends Controller
             : 'Cupón desactivado.');
     }
 
-    // ── ELIMINAR ────────────────────────────────────────────
     public function destroy($id)
     {
         $cupon = Cupon::findOrFail($id);
 
-        // Eliminar registros de uso asociados
         CuponUsado::where('id_cupon', $id)->delete();
 
         $cupon->delete();

@@ -2,105 +2,57 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Log;
 use Pusher\PushNotifications\PushNotifications;
+use Throwable;
 
 class PusherBeamsService
 {
-    protected $beams;
-
-    public function __construct()
-    {
-        $this->beams = new PushNotifications([
-            'instanceId' => env('PUSHER_BEAMS_INSTANCE_ID'),
-            'secretKey' => env('PUSHER_BEAMS_SECRET_KEY'),
-        ]);
-    }
-
     public function enviarOferta($nombreProducto, $precioOferta, $categoria = '')
     {
-        $iconUrl = url('/images/logo_notificacion.jpg');
-        
-        $titulo = "OFERTA ESPECIAL";
-        $mensaje = $categoria 
-            ? "$nombreProducto en $categoria ahora a solo S/ " . number_format($precioOferta, 2)
-            : "$nombreProducto ahora a solo S/ " . number_format($precioOferta, 2);
-        
-        $resultado = $this->beams->publishToInterests(
-            ['ofertas'],
-            [
-                "fcm" => [
-                    "notification" => [
-                        "title" => $titulo,
-                        "body" => $mensaje,
-                    ]
-                ],
-                "web" => [
-                    "notification" => [
-                        "title" => $titulo,
-                        "body" => $mensaje,
-                        "icon" => $iconUrl
-                    ]
-                ]
-            ]
-        );
-        
-        return $resultado;
+        $precio = number_format($precioOferta, 2);
+
+        $mensaje = $categoria
+            ? "$nombreProducto en $categoria ahora a solo S/ $precio"
+            : "$nombreProducto ahora a solo S/ $precio";
+
+        return $this->publicar('ofertas', 'OFERTA ESPECIAL', $mensaje);
     }
 
     public function enviarLanzamiento($nombreProducto, $categoria = '')
     {
-        $iconUrl = url('/images/logo_notificacion.jpg');
-        
-        $titulo = "NUEVO PRODUCTO!";
-        $mensaje = $categoria 
+        $mensaje = $categoria
             ? "Ya disponible: $nombreProducto en $categoria"
             : "Ya disponible: $nombreProducto";
-        
-        $resultado = $this->beams->publishToInterests(
-            ['lanzamientos'],  
-            [
-                "fcm" => [
-                    "notification" => [
-                        "title" => $titulo,
-                        "body" => $mensaje,
-                    ]
-                ],
-                "web" => [
-                    "notification" => [
-                        "title" => $titulo,
-                        "body" => $mensaje,
-                        "icon" => $iconUrl
-                    ]
-                ]
-            ]
-        );
-        
-        return $resultado;
+
+        return $this->publicar('lanzamientos', 'NUEVO PRODUCTO!', $mensaje);
     }
 
-    public function enviarCarrito($userId, $titulo, $mensaje)
+    protected function publicar(string $interest, string $titulo, string $mensaje)
     {
-        $iconUrl = url('/images/logo_notificacion.jpg');
-        
-        $resultado = $this->beams->publishToUsers(
-            ["carrito-$userId"],
-            [
-                "fcm" => [
-                    "notification" => [
-                        "title" => $titulo,
-                        "body" => $mensaje,
-                    ]
-                ],
-                "web" => [
-                    "notification" => [
-                        "title" => $titulo,
-                        "body" => $mensaje,
-                        "icon" => $iconUrl
-                    ]
+        try {
+            $beams = new PushNotifications([
+                'instanceId' => config('services.pusher_beams.instance_id'),
+                'secretKey'  => config('services.pusher_beams.secret_key'),
+            ]);
+
+            return $beams->publishToInterests(
+                [$interest],
+                [
+                    'fcm' => [
+                        'notification' => [
+                            'title' => $titulo,
+                            'body'  => $mensaje,
+                        ],
+                    ],
                 ]
-            ]
-        );
-        
-        return $resultado;
+            );
+        } catch (Throwable $e) {
+            // Un fallo de notificaciones no debe romper el guardado del producto.
+            Log::error('Error enviando notificación Beams: ' . $e->getMessage(), [
+                'interest' => $interest,
+            ]);
+            return null;
+        }
     }
 }

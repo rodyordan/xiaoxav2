@@ -12,7 +12,6 @@ class ProductoResource extends JsonResource
             return $this->variantes;
         }, collect());
 
-        // Imagen principal = primera imagen de la primera variante con imágenes
         $imagenPrincipal = null;
         foreach ($variantes as $variante) {
             $primera = $variante->imagenes->first() ?? null;
@@ -22,7 +21,6 @@ class ProductoResource extends JsonResource
             }
         }
 
-        // Galería = todas las imágenes de todas las variantes
         $galeria = [];
         foreach ($variantes as $variante) {
             foreach ($variante->imagenes as $img) {
@@ -30,22 +28,15 @@ class ProductoResource extends JsonResource
             }
         }
 
-        // Stock total
         $stockTotal = $variantes->sum('stock');
-
-        // Tallas únicas
         $tallas = $variantes->pluck('talla')->unique()->filter()->values()->toArray();
-
-        // Colores únicos
         $colores = $variantes->pluck('color')->unique()->filter()->values()->toArray();
-
-        // SKU principal
         $skuPrincipal = $variantes->isNotEmpty() ? $variantes->first()->sku : null;
 
         return [
             'id' => $this->id_producto,
             'titulo' => $this->nombre_producto,
-            'descripcion' => '',
+            'detalles' => $this->detalles ?? [],
             'precio' => (float) $this->precio,
             'precio_oferta' => $this->precio_oferta ? (float) $this->precio_oferta : null,
             'descuento' => $this->descuento,

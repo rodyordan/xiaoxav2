@@ -48,7 +48,6 @@
             <form method="POST" action="{{ route('login') }}" @submit.prevent="validar($event)" novalidate>
                 @csrf
 
-                {{-- CORREO ELECTRÓNICO --}}
                 <div class="mb-5">
                     <label for="correo" class="block text-sm font-medium text-gray-700 mb-2">
                         Correo electrónico
@@ -60,12 +59,11 @@
                         x-model="correo"
                         @input="if (errores.correo) delete errores.correo"
                         value="{{ old('correo') }}"
-                        placeholder="Ingresar correo"
+                        placeholder="Ingresar correo electrónico"
                         class="w-full border rounded-lg px-4 py-2.5 text-sm text-black placeholder-gray-400 focus:outline-none transition"
                         :class="errores.correo ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'"
                         autofocus
                     >
-                    {{-- ✅ Mensaje con ícono --}}
                     <p x-show="errores.correo" x-cloak
                        class="flex items-center gap-1.5 text-xs text-red-600 mt-1.5 font-medium">
                         <x-heroicon-s-exclamation-circle class="w-3.5 h-3.5 shrink-0" />
@@ -73,8 +71,7 @@
                     </p>
                 </div>
 
-                {{-- CONTRASEÑA --}}
-                <div class="mb-3" x-data="{ verPassword: false }">
+                <div class="mb-6" x-data="{ verPassword: false }">
                     <label for="contrasena" class="block text-sm font-medium text-gray-700 mb-2">
                         Contraseña
                     </label>
@@ -99,18 +96,11 @@
                             <x-heroicon-o-eye-slash x-show="verPassword" x-cloak class="w-5 h-5" />
                         </button>
                     </div>
-                    {{-- ✅ Mensaje con ícono --}}
                     <p x-show="errores.contrasena" x-cloak
                        class="flex items-center gap-1.5 text-xs text-red-600 mt-1.5 font-medium">
                         <x-heroicon-s-exclamation-circle class="w-3.5 h-3.5 shrink-0" />
                         <span x-text="errores.contrasena"></span>
                     </p>
-                </div>
-
-                <div class="text-right mb-6">
-                    <a href="#" class="text-sm text-gray-500 hover:text-black transition">
-                        ¿Olvidaste tu contraseña?
-                    </a>
                 </div>
 
                 <button
@@ -121,7 +111,7 @@
                 </button>
             </form>
 
-            <p class="text-center text-sm text-gray-500 mt-6">
+            <p class="text-center text-sm text-black mt-6">
                 ¿No tienes una cuenta?
                 <a href="{{ route('register') }}" class="text-black font-semibold hover:underline">
                     Registrarse

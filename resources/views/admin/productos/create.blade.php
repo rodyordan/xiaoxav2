@@ -6,7 +6,6 @@
         @js(old('detalles', ['']))
     )">
 
-        {{-- Header con título y botones a la derecha --}}
         <div class="flex items-center justify-between gap-4 mb-6">
             <div>
                 <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">Nuevo Producto</h1>
@@ -34,8 +33,10 @@
                 categoriaCheck: '{{ old('id_categoria', '') }}',
                 errores: {},
                 erroresVariantes: {},
+                submitting: false,
 
-                validateForm(e) {
+                async validateForm(e) {
+                    if (this.submitting) return;
                     this.errores = {};
                     this.erroresVariantes = {};
 
@@ -62,6 +63,7 @@
 
                         if (!variante.talla || !variante.talla.trim()) vErr.talla = true;
                         if (!variante.color || !variante.color.trim()) vErr.color = true;
+                        if (!variante.sku || !variante.sku.trim()) vErr.sku = true;
 
                         if (variante.stock === '' || variante.stock === null || variante.stock === undefined) {
                             vErr.stock = true;
@@ -74,11 +76,25 @@
                         }
                     });
 
+                    // Detectar combinaciones duplicadas
+                    const combinaciones = this.variantes.map(v => 
+                        (v.talla || '').toLowerCase().trim() + '-' + (v.color || '').toLowerCase().trim()
+                    );
+                    const hayDuplicados = combinaciones.some((c, i) => combinaciones.indexOf(c) !== i);
+
+                    if (hayDuplicados) {
+                        combinaciones.forEach((c, i) => {
+                            if (combinaciones.indexOf(c) !== i || combinaciones.lastIndexOf(c) !== i) {
+                                if (!this.erroresVariantes[i]) this.erroresVariantes[i] = {};
+                                this.erroresVariantes[i].talla = true;
+                                this.erroresVariantes[i].color = true;
+                            }
+                        });
+                    }
+
                     const hayErrores = Object.keys(this.errores).length > 0 || Object.keys(this.erroresVariantes).length > 0;
 
-                    if (hayErrores) {
-                        e.preventDefault();
-
+                    if (hayErrores || hayDuplicados) {
                         if (Object.keys(this.errores).length > 0) {
                             const primerError = Object.keys(this.errores)[0];
                             const ref = this.$refs[primerError + 'Container'];
@@ -88,21 +104,76 @@
                             const ref = this.$refs['varianteContainer' + primerIndex];
                             if (ref) ref.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         }
+
+                        if (hayDuplicados) {
+                            window.dispatchEvent(new CustomEvent('toast', {
+                                detail: { type: 'error', message: ['Hay combinaciones de Talla y Color duplicadas.'] }
+                            }));
+                        }
                         return;
                     }
 
-                    e.target.submit();
+                    this.submitting = true;
+
+                    const form = e.target;
+                    const formData = new FormData(form);
+
+                    try {
+                        const response = await fetch(form.action, {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                            },
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            window.dispatchEvent(new CustomEvent('toast', {
+                                detail: { type: 'success', message: data.message || 'Producto creado exitosamente.' }
+                            }));
+                            setTimeout(() => window.location.href = '{{ route('admin.productos.index') }}', 500);
+                        } else {
+                            if (data.errors) {
+                                Object.keys(data.errors).forEach(key => {
+                                    if (key.startsWith('variantes.')) {
+                                        const m = key.match(/^variantes\.(\d+)\./);
+                                        if (m) {
+                                            const idx = parseInt(m[1]);
+                                            const campo = key.split('.').pop();
+                                            if (!this.erroresVariantes[idx]) this.erroresVariantes[idx] = {};
+                                            this.erroresVariantes[idx][campo] = true;
+                                        }
+                                    } else {
+                                        this.errores[key] = true;
+                                    }
+                                });
+                                const todos = Object.values(data.errors).flat();
+                                window.dispatchEvent(new CustomEvent('toast', {
+                                    detail: { type: 'error', message: todos }
+                                }));
+                            } else if (data.message) {
+                                window.dispatchEvent(new CustomEvent('toast', {
+                                    detail: { type: 'error', message: data.message }
+                                }));
+                            }
+                            this.submitting = false;
+                        }
+                    } catch (error) {
+                        window.dispatchEvent(new CustomEvent('toast', {
+                            detail: { type: 'error', message: ['Error de conexión. Intenta de nuevo.'] }
+                        }));
+                        this.submitting = false;
+                    }
                 }
             }"
             @submit.prevent="validateForm($event)">
             @csrf
 
-            {{-- ============================================= --}}
-            {{-- COLUMNA 1: PRODUCTO --}}
-            {{-- ============================================= --}}
             <div class="space-y-6">
 
-                {{-- Información General --}}
                 <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm space-y-4">
                     <div class="flex items-center gap-3">
                         <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600">
@@ -113,17 +184,16 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
 
-                        {{-- Nombre del producto --}}
                         <div class="md:col-span-2" x-ref="nombre_productoContainer">
                             <div class="flex items-center gap-2">
                                 <label class="text-[14px] font-bold text-gray-800 shrink-0">Nombre del producto:</label>
                                 <input name="nombre_producto" x-ref="nombreProducto" value="{{ old('nombre_producto') }}"
+                                    @input="delete errores.nombre_producto"
                                     class="w-full px-3 py-1.5 border rounded-full bg-gray-50 text-[14px] focus:outline-none focus:border-gray-400 transition-colors"
                                     :class="errores.nombre_producto ? 'border-rose-500' : 'border-gray-200'">
                             </div>
                         </div>
 
-                        {{-- Marca --}}
                         <div x-ref="marcaContainer">
                             <div class="flex items-center gap-2">
                                 <label class="text-[14px] font-bold text-gray-800 shrink-0">Marca:</label>
@@ -132,7 +202,6 @@
                             </div>
                         </div>
 
-                        {{-- Categoría --}}
                         <div x-ref="id_categoriaContainer"
                              x-data="{ open: false, categoriaTexto: '{{ old('id_categoria') ? addslashes(\App\Models\Categoria::find(old('id_categoria'))?->nombre_categoria ?? '') : 'Seleccionar' }}' }"
                              x-init="
@@ -174,7 +243,6 @@
                             </div>
                         </div>
 
-                        {{-- Precio Principal --}}
                         <div x-ref="precioContainer">
                             <div class="flex items-center gap-2">
                                 <label class="text-[14px] font-bold text-gray-800 shrink-0">Precio:</label>
@@ -182,13 +250,13 @@
                                     <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none text-[14px]">S/</span>
                                     <input name="precio" x-ref="precio" type="text" inputmode="decimal" value="{{ old('precio') }}"
                                         oninput="this.value = this.value.replace(/[^0-9.]/g, '')"
+                                        @input="delete errores.precio"
                                         class="w-full pl-9 pr-3 py-1.5 border rounded-full bg-gray-50 text-[14px] focus:outline-none focus:border-gray-400 transition-colors"
                                         :class="errores.precio ? 'border-rose-500' : 'border-gray-200'">
                                 </div>
                             </div>
                         </div>
 
-                        {{-- Precio Oferta --}}
                         <div x-ref="precio_ofertaContainer">
                             <div class="flex items-center gap-2">
                                 <label class="text-[14px] font-bold text-gray-800 shrink-0">Precio de oferta:</label>
@@ -196,6 +264,7 @@
                                     <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none text-[14px]">S/</span>
                                     <input name="precio_oferta" x-ref="precioOferta" type="text" inputmode="decimal" value="{{ old('precio_oferta') }}"
                                         oninput="this.value = this.value.replace(/[^0-9.]/g, '')"
+                                        @input="delete errores.precio_oferta"
                                         class="w-full pl-9 pr-3 py-1.5 border rounded-full bg-gray-50 text-[14px] focus:outline-none focus:border-gray-400 transition-colors"
                                         :class="errores.precio_oferta ? 'border-rose-500' : 'border-gray-200'">
                                 </div>
@@ -204,7 +273,6 @@
                     </div>
                 </div>
 
-                {{-- Detalles --}}
                 <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
                     <div class="flex justify-between items-center mb-6">
                         <div class="flex items-center gap-3">
@@ -222,21 +290,21 @@
                         </button>
                     </div>
 
-                    <div class="space-y-2">
+                    <div class="space-y-2 pt-1.5">
                         <template x-for="(detalle, index) in detalles" :key="index">
-                            <div class="relative group pt-1.5 flex items-center gap-3">
-                                <span class="w-2 h-2 rounded-full bg-gray-900 flex-shrink-0"></span>
+                            <div class="relative group flex items-start gap-3">
+                                <span class="w-2 h-2 rounded-full bg-gray-900 flex-shrink-0 mt-[12px]"></span>
 
                                 <div class="relative flex-1">
                                     <textarea
                                         :name="`detalles[${index}]`"
                                         x-model="detalles[index]"
                                         rows="1"
-                                        x-init="$el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px'"
-                                        @input="$el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px'; if ($event.target.value.trim()) delete errores.detalles"
-                                        class="w-full px-4 py-1.5 pr-10 border rounded-2xl bg-gray-50 text-[14px] focus:outline-none focus:border-gray-400 resize-none overflow-hidden leading-snug transition-colors"
-                                        :class="errores.detalles ? 'border-rose-500' : 'border-gray-200'"
-                                        style="min-height: 34px;"></textarea>
+                                        @input="delete errores.detalles"
+                                        oninput="this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px';"
+                                        x-init="$nextTick(() => { $el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px'; })"
+                                        class="w-full px-4 py-1.5 pr-10 border rounded-2xl bg-gray-50 text-[14px] leading-5 focus:outline-none focus:border-gray-400 resize-none overflow-hidden"
+                                        :class="errores.detalles ? 'border-rose-500' : 'border-gray-200'"></textarea>
 
                                     <button type="button" @click="removeDetalle(index)"
                                             x-show="detalles.length > 1"
@@ -251,9 +319,6 @@
                 </div>
             </div>
 
-            {{-- ============================================= --}}
-            {{-- COLUMNA 2: VARIANTES --}}
-            {{-- ============================================= --}}
             <div class="space-y-6">
                 <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
                     <div class="flex justify-between items-center mb-6">
@@ -287,18 +352,22 @@
                                     <div class="flex items-center gap-2 flex-1">
                                         <label class="text-[14px] font-bold text-gray-800 shrink-0">SKU:</label>
                                         <input type="text" :name="`variantes[${index}][sku]`" x-model="variante.sku"
-                                            class="w-full px-3 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-[14px] focus:outline-none focus:border-gray-400 transition-colors">
+                                            @input="if (erroresVariantes[index]) delete erroresVariantes[index].sku"
+                                            class="w-full px-3 py-1.5 border rounded-full bg-gray-50 text-[14px] focus:outline-none focus:border-gray-400 transition-colors"
+                                            :class="erroresVariantes[index]?.sku ? 'border-rose-500' : 'border-gray-200'">
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <label class="text-[14px] font-bold text-gray-800 shrink-0">Talla:</label>
                                         <input type="text" :name="`variantes[${index}][talla]`" x-model="variante.talla"
-                                            class="w-[50px] px-3 py-1.5 border rounded-full bg-gray-50 text-[14px] focus:outline-none focus:border-gray-400 transition-colors"
+                                            @input="if (erroresVariantes[index]) delete erroresVariantes[index].talla"
+                                            class="w-[70px] px-3 py-1.5 border rounded-full bg-gray-50 text-[14px] focus:outline-none focus:border-gray-400 transition-colors"
                                             :class="erroresVariantes[index]?.talla ? 'border-rose-500' : 'border-gray-200'">
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <label class="text-[14px] font-bold text-gray-800 shrink-0">Stock:</label>
                                         <input type="text" inputmode="numeric" :name="`variantes[${index}][stock]`" x-model="variante.stock"
                                             oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                            @input="if (erroresVariantes[index]) delete erroresVariantes[index].stock"
                                             class="w-[50px] px-3 py-1.5 border rounded-full bg-gray-50 text-[14px] focus:outline-none focus:border-gray-400 transition-colors"
                                             :class="erroresVariantes[index]?.stock ? 'border-rose-500' : 'border-gray-200'">
                                     </div>
@@ -308,6 +377,7 @@
                                     <div class="flex items-center gap-2 flex-1">
                                         <label class="text-[14px] font-bold text-gray-800 shrink-0">Color:</label>
                                         <input type="text" :name="`variantes[${index}][color]`" x-model="variante.color"
+                                            @input="if (erroresVariantes[index]) delete erroresVariantes[index].color"
                                             class="w-full px-3 py-1.5 border rounded-full bg-gray-50 text-[14px] focus:outline-none focus:border-gray-400 transition-colors"
                                             :class="erroresVariantes[index]?.color ? 'border-rose-500' : 'border-gray-200'">
                                     </div>

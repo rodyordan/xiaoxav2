@@ -1,11 +1,9 @@
-{{-- resources/views/carrito/checkout.blade.php --}}
 @extends('layouts.app')
 
 @section('title', 'Datos de compra - Xiaoxa')
 
 @section('content')
 
-{{-- ===== BREADCRUMB ===== --}}
 <div class="max-w-7xl mx-auto px-4 sm:px-8 pt-6 pb-2">
     <div class="flex items-center justify-center gap-2 flex-wrap">
         <a href="{{ route('carrito.index') }}" class="flex items-center gap-1">
@@ -18,7 +16,6 @@
     </div>
 </div>
 
-{{-- CALCULAR TOTAL Y PRODUCTOS --}}
 @php
     $total = 0;
     $resumenProductos = [];
@@ -51,16 +48,13 @@
 <div x-data="checkoutData({{ $total }})" x-cloak
     class="max-w-7xl mx-auto px-4 sm:px-8 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
 
-    {{-- ===== IZQUIERDA: FORMULARIO ===== --}}
     <div class="lg:col-span-8 space-y-8">
 
-        {{-- ───── DATOS PERSONALES ───── --}}
         <div>
             <h2 class="text-base font-normal text-gray-700 mb-5">Datos personales</h2>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
-                {{-- Tipo de documento --}}
                 <div>
                     <label class="block text-sm font-normal text-gray-700 mb-2">Tipo de documento</label>
 
@@ -68,7 +62,8 @@
                         <input type="hidden" name="id_tipo_documento" :value="idTipoDocumento">
 
                         <button type="button" @click="open = !open"
-                            class="w-full flex items-center justify-between gap-2 pl-4 pr-4 py-2.5 border border-gray-200 rounded-full bg-white text-sm text-gray-700 cursor-pointer focus:outline-none focus:border-gray-400 transition-colors">
+                            class="w-full flex items-center justify-between gap-2 pl-4 pr-4 py-2.5 border rounded-full bg-white text-sm text-gray-700 cursor-pointer focus:outline-none transition-colors"
+                            :class="errores.idTipoDocumento ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">
                             <span x-text="idTipoDocumentoTexto"></span>
                             <x-heroicon-o-chevron-down class="w-4 h-4 shrink-0" />
                         </button>
@@ -84,7 +79,7 @@
                             <div class="max-h-64 overflow-y-auto py-1">
                                 @foreach($tiposDocumento as $td)
                                     <button type="button"
-                                        @click="idTipoDocumento = '{{ $td->id_tipo_documento }}'; idTipoDocumentoTexto = '{{ addslashes($td->nombre_tipo_documento) }}'; open = false"
+                                        @click="idTipoDocumento = '{{ $td->id_tipo_documento }}'; idTipoDocumentoTexto = '{{ addslashes($td->nombre_tipo_documento) }}'; open = false; if(errores.idTipoDocumento) delete errores.idTipoDocumento"
                                         class="w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition">
                                         {{ $td->nombre_tipo_documento }}
                                     </button>
@@ -92,34 +87,46 @@
                             </div>
                         </div>
                     </div>
+                    <p x-show="errores.idTipoDocumento" x-cloak class="flex items-center gap-1.5 text-xs text-red-600 mt-1.5 font-medium">
+                        <x-heroicon-s-exclamation-circle class="w-3.5 h-3.5 shrink-0" />
+                        <span x-text="errores.idTipoDocumento"></span>
+                    </p>
                 </div>
 
-                {{-- Número de documento --}}
                 <div>
                     <label class="block text-sm font-normal text-gray-700 mb-2">Número de documento</label>
                     <input type="text" name="numero_documento"
                         x-model="numeroDocumento"
+                        @input="if(errores.numeroDocumento) delete errores.numeroDocumento"
                         placeholder="Ingresar documento"
-                        class="w-full border border-gray-200 rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none focus:border-gray-400 transition-colors">
+                        class="w-full border rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none transition-colors"
+                        :class="errores.numeroDocumento ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">
+                    <p x-show="errores.numeroDocumento" x-cloak class="flex items-center gap-1.5 text-xs text-red-600 mt-1.5 font-medium">
+                        <x-heroicon-s-exclamation-circle class="w-3.5 h-3.5 shrink-0" />
+                        <span x-text="errores.numeroDocumento"></span>
+                    </p>
                 </div>
 
-                {{-- Teléfono --}}
                 <div>
                     <label class="block text-sm font-normal text-gray-700 mb-2">Teléfono</label>
                     <input type="text" name="telefono"
                         x-model="telefono"
+                        @input="if(errores.telefono) delete errores.telefono"
                         placeholder="Ingresar teléfono"
-                        class="w-full border border-gray-200 rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none focus:border-gray-400 transition-colors">
+                        class="w-full border rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none transition-colors"
+                        :class="errores.telefono ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">
+                    <p x-show="errores.telefono" x-cloak class="flex items-center gap-1.5 text-xs text-red-600 mt-1.5 font-medium">
+                        <x-heroicon-s-exclamation-circle class="w-3.5 h-3.5 shrink-0" />
+                        <span x-text="errores.telefono"></span>
+                    </p>
                 </div>
 
             </div>
         </div>
 
-        {{-- ───── DATOS DE ENTREGA ───── --}}
         <div>
             <h2 class="text-base font-normal text-gray-700 mb-5">Datos de entrega</h2>
 
-            {{-- Radio --}}
             <div class="flex items-center gap-8 mb-6 text-sm text-gray-700">
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="radio" name="tipo_entrega" value="2"
@@ -138,41 +145,54 @@
                 </label>
             </div>
 
-            {{-- Campos de ubicación (solo envío a provincia) --}}
             <div x-show="tipoEntrega == 2" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
                 <div>
                     <label class="block text-sm font-normal text-gray-700 mb-2">Departamento</label>
                     <input type="text"
                         x-model="departamento"
+                        @input="if(errores.departamento) delete errores.departamento"
                         placeholder="Ingresar departamento"
-                        class="w-full border border-gray-200 rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none focus:border-gray-400 transition-colors">
+                        class="w-full border rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none transition-colors"
+                        :class="errores.departamento ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">
+                    <p x-show="errores.departamento" x-cloak class="flex items-center gap-1.5 text-xs text-red-600 mt-1.5 font-medium">
+                        <x-heroicon-s-exclamation-circle class="w-3.5 h-3.5 shrink-0" />
+                        <span x-text="errores.departamento"></span>
+                    </p>
                 </div>
 
                 <div>
                     <label class="block text-sm font-normal text-gray-700 mb-2">Provincia</label>
                     <input type="text"
                         x-model="provincia"
+                        @input="if(errores.provincia) delete errores.provincia"
                         placeholder="Ingresar provincia"
-                        class="w-full border border-gray-200 rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none focus:border-gray-400 transition-colors">
+                        class="w-full border rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none transition-colors"
+                        :class="errores.provincia ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">
+                    <p x-show="errores.provincia" x-cloak class="flex items-center gap-1.5 text-xs text-red-600 mt-1.5 font-medium">
+                        <x-heroicon-s-exclamation-circle class="w-3.5 h-3.5 shrink-0" />
+                        <span x-text="errores.provincia"></span>
+                    </p>
                 </div>
 
                 <div>
                     <label class="block text-sm font-normal text-gray-700 mb-2">Distrito</label>
                     <input type="text"
                         x-model="distrito"
+                        @input="if(errores.distrito) delete errores.distrito"
                         placeholder="Ingresar distrito"
-                        class="w-full border border-gray-200 rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none focus:border-gray-400 transition-colors">
+                        class="w-full border rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none transition-colors"
+                        :class="errores.distrito ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">
+                    <p x-show="errores.distrito" x-cloak class="flex items-center gap-1.5 text-xs text-red-600 mt-1.5 font-medium">
+                        <x-heroicon-s-exclamation-circle class="w-3.5 h-3.5 shrink-0" />
+                        <span x-text="errores.distrito"></span>
+                    </p>
                 </div>
 
             </div>
 
-            {{-- ══════════════════════════════════════════════════════ --}}
-            {{-- MENSAJES DINÁMICOS                                     --}}
-            {{-- ══════════════════════════════════════════════════════ --}}
             <div class="mt-6">
 
-                {{-- ── ENVÍO A PROVINCIA ── --}}
                 <div x-show="tipoEntrega == 2" class="space-y-4">
 
                     <p class="text-sm text-gray-800">
@@ -192,7 +212,6 @@
 
                 </div>
 
-                {{-- ── RETIRO EN TIENDA ── --}}
                 <div x-show="tipoEntrega != 2" class="space-y-4">
 
                     <div class="relative bg-gray-900 rounded-2xl p-4 overflow-hidden">
@@ -211,30 +230,20 @@
             </div>
         </div>
 
-        {{-- Botón pagar mobile --}}
         <div class="lg:hidden">
             <button @click="intentarPagar"
                 class="w-full bg-gray-900 text-white rounded-full py-4 text-sm font-semibold tracking-wide hover:bg-gray-800 transition-all">
-                <span x-show="!procesando">Continuar con la compra</span>
-                <span x-show="procesando" class="flex items-center justify-center gap-2">
-                    <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Procesando…
-                </span>
+                <span>Continuar con la compra</span>
             </button>
         </div>
 
     </div>
 
-    {{-- ===== DERECHA: RESUMEN DEL PEDIDO ===== --}}
     <div class="lg:col-span-4">
         <div class="bg-[#f1f1f1] rounded-2xl p-7 lg:sticky lg:top-24">
 
             <h2 class="font-bold text-lg mb-6 text-gray-900">Resumen del pedido</h2>
 
-            {{-- Lista de productos --}}
             <div class="space-y-3 mb-5">
                 @foreach($resumenProductos as $item)
                     <div class="flex items-start justify-between gap-3">
@@ -257,20 +266,12 @@
 
             <button @click="intentarPagar"
                 class="hidden lg:flex mt-7 items-center justify-center w-full bg-gray-900 text-white rounded-full py-4 text-xs font-bold tracking-widest hover:bg-gray-800 active:scale-[0.99] transition-all uppercase">
-                <span x-show="!procesando">Continuar con la compra</span>
-                <span x-show="procesando" class="flex items-center gap-2">
-                    <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Procesando…
-                </span>
+                <span>Continuar con la compra</span>
             </button>
 
         </div>
     </div>
 
-    {{-- Formulario oculto --}}
     <form id="form-pedido" method="POST" action="{{ route('checkout.confirmar') }}">
         @csrf
         <input type="hidden" name="id_tipo_entrega"    x-bind:value="tipoEntrega">
@@ -295,7 +296,8 @@
             provincia:           '',
             distrito:            '',
             totalProductos:      totalProductos,
-            procesando:          false,
+            
+            errores: {},
 
             idTipoDocumento:      '{{ auth()->user()->id_tipo_documento ?? '' }}',
             idTipoDocumentoTexto: '{{ addslashes($tipoDocumentoTextoInicial) }}',
@@ -303,31 +305,34 @@
             telefono:             '{{ auth()->user()->telefono ?? '' }}',
 
             intentarPagar() {
+                this.errores = {};
+
                 if (!this.idTipoDocumento) {
-                    alert('Selecciona un tipo de documento.');
+                    this.errores.idTipoDocumento = 'Selecciona un tipo de documento.';
+                }
+                if (!this.numeroDocumento.trim()) {
+                    this.errores.numeroDocumento = 'El número de documento es obligatorio.';
+                }
+                if (!this.telefono.trim()) {
+                    this.errores.telefono = 'El teléfono es obligatorio.';
+                }
+                
+                if (this.tipoEntrega == 2) {
+                    if (!this.departamento.trim()) {
+                        this.errores.departamento = 'El departamento es obligatorio.';
+                    }
+                    if (!this.provincia.trim()) {
+                        this.errores.provincia = 'La provincia es obligatoria.';
+                    }
+                    if (!this.distrito.trim()) {
+                        this.errores.distrito = 'El distrito es obligatorio.';
+                    }
+                }
+
+                if (Object.keys(this.errores).length > 0) {
                     return;
                 }
-                if (!this.numeroDocumento) {
-                    alert('Ingresa tu número de documento.');
-                    return;
-                }
-                if (!this.telefono) {
-                    alert('Ingresa tu teléfono.');
-                    return;
-                }
-                if (this.tipoEntrega == 2 && !this.departamento) {
-                    alert('Ingresa el departamento de envío.');
-                    return;
-                }
-                if (this.tipoEntrega == 2 && !this.provincia) {
-                    alert('Ingresa la provincia de envío.');
-                    return;
-                }
-                if (this.tipoEntrega == 2 && !this.distrito) {
-                    alert('Ingresa el distrito de envío.');
-                    return;
-                }
-                this.procesando = true;
+
                 document.getElementById('form-pedido').submit();
             },
         }

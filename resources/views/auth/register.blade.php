@@ -16,7 +16,6 @@
                 errores: {},
 
                 init() {
-                    {{-- Errores del servidor: se cargan al iniciar Alpine --}}
                     @if ($errors->has('nombres'))
                         this.errores.nombres = '{{ $errors->first('nombres') }}';
                     @endif
@@ -69,13 +68,11 @@
                 }
              }">
 
-            {{-- TÍTULO --}}
             <h1 class="text-2xl font-bold text-center text-black mb-8">Registrarse</h1>
 
             <form method="POST" action="{{ route('register') }}" @submit.prevent="validar($event)" novalidate>
                 @csrf
 
-                {{-- NOMBRES --}}
                 <div class="mb-5">
                     <label for="nombres" class="block text-sm font-medium text-gray-700 mb-2">
                         Nombres
@@ -99,7 +96,6 @@
                     </p>
                 </div>
 
-                {{-- APELLIDOS --}}
                 <div class="mb-5">
                     <label for="apellidos" class="block text-sm font-medium text-gray-700 mb-2">
                         Apellidos
@@ -122,7 +118,6 @@
                     </p>
                 </div>
 
-                {{-- CORREO ELECTRÓNICO --}}
                 <div class="mb-5">
                     <label for="correo" class="block text-sm font-medium text-gray-700 mb-2">
                         Correo electrónico
@@ -134,7 +129,7 @@
                         x-model="correo"
                         @input="if (errores.correo) delete errores.correo"
                         value="{{ old('correo') }}"
-                        placeholder="Ingresar correo"
+                        placeholder="Ingresar correo electrónico"
                         class="w-full border rounded-lg px-4 py-2.5 text-sm text-black placeholder-gray-400 focus:outline-none transition"
                         :class="errores.correo ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'"
                     >
@@ -145,7 +140,6 @@
                     </p>
                 </div>
 
-                {{-- CONTRASEÑA --}}
                 <div class="mb-5" x-data="{ verPassword: false }">
                     <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
                         Contraseña
@@ -178,7 +172,6 @@
                     </p>
                 </div>
 
-                {{-- CONFIRMAR CONTRASEÑA --}}
                 <div class="mb-6" x-data="{ verConfirmar: false }">
                     <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-2">
                         Confirmar contraseña
@@ -211,7 +204,6 @@
                     </p>
                 </div>
 
-                {{-- BOTÓN CREAR CUENTA --}}
                 <button
                     type="submit"
                     class="w-full bg-black text-white text-sm font-bold uppercase tracking-wider py-3 rounded-lg hover:bg-gray-800 transition-colors duration-200"
@@ -220,8 +212,7 @@
                 </button>
             </form>
 
-            {{-- LINK INICIAR SESIÓN --}}
-            <p class="text-center text-sm text-gray-500 mt-6">
+            <p class="text-center text-sm text-black mt-6">
                 ¿Ya tienes una cuenta?
                 <a href="{{ route('login') }}" class="text-black font-semibold hover:underline">
                     Iniciar sesión

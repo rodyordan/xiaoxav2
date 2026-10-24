@@ -3,7 +3,6 @@
 @section('content')
 <div x-data="{ createModal: {{ $errors->any() ? 'true' : 'false' }} }">
 
-    {{-- HEADER --}}
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-6">
         <div>
             <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">Banners</h1>
@@ -17,7 +16,6 @@
         </button>
     </div>
 
-    {{-- GRID --}}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         @forelse($banners as $banner)
             <div class="group relative bg-white border border-gray-200 overflow-hidden shadow-sm transition-all duration-300">
@@ -77,30 +75,77 @@
         @endforelse
     </div>
 
-    {{-- MODAL CREAR --}}
     <template x-if="createModal">
         <div class="fixed inset-0 z-[100] flex items-center justify-center p-4"
              x-data="{
+                estadoCrear: '{{ old('estado', 1) }}',
+                estadoTextoCrear: '{{ old('estado', 1) == 1 ? 'Activo' : 'Inactivo' }}',
+                fileName: '',
+                submitting: false,
                 errores: {},
-                submitForm(e) {
+                async submitForm(e) {
+                    if (this.submitting) return;
+                    this.submitting = true;
                     this.errores = {};
 
-                    const titulo = e.target.querySelector('input[name=titulo]').value.trim();
+                    const form = e.target;
+
+                    const titulo = form.querySelector('input[name=titulo]').value.trim();
                     if (!titulo) this.errores.titulo = true;
 
-                    const imagen = e.target.querySelector('input[name=imagen]').files.length;
+                    const imagen = form.querySelector('input[name=imagen]').files.length;
                     if (imagen === 0) this.errores.imagen = true;
 
                     if (Object.keys(this.errores).length > 0) {
-                        e.preventDefault();
+                        this.submitting = false;
                         return;
                     }
 
-                    e.target.submit();
+                    const formData = new FormData(form);
+
+                    try {
+                        const response = await fetch(form.action, {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                            },
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            window.dispatchEvent(new CustomEvent('toast', {
+                                detail: { type: 'success', message: data.message || 'Banner creado correctamente.' }
+                            }));
+                            setTimeout(() => window.location.reload(), 500);
+                        } else {
+                            if (data.errors) {
+                                Object.keys(data.errors).forEach(key => {
+                                    this.errores[key] = true;
+                                });
+                                const todos = Object.values(data.errors).flat();
+                                window.dispatchEvent(new CustomEvent('toast', {
+                                    detail: { type: 'error', message: todos }
+                                }));
+                            } else if (data.message) {
+                                window.dispatchEvent(new CustomEvent('toast', {
+                                    detail: { type: 'error', message: data.message }
+                                }));
+                            }
+                            this.submitting = false;
+                        }
+                    } catch (error) {
+                        window.dispatchEvent(new CustomEvent('toast', {
+                            detail: { type: 'error', message: 'Error de conexión. Intenta de nuevo.' }
+                        }));
+                        this.submitting = false;
+                    }
                 }
              }">
             <div @click="createModal = false" class="absolute inset-0 bg-gray-900/40 backdrop-blur-md"></div>
-            <div class="relative bg-white rounded-[2.5rem] p-10 max-w-2xl w-full shadow-2xl max-h-[92vh] overflow-y-auto">
+            <div class="relative bg-white rounded-[2.5rem] p-10 max-w-lg w-full shadow-2xl max-h-[92vh] overflow-y-auto">
 
                 <div class="flex justify-between items-start mb-8">
                     <div>
@@ -116,38 +161,39 @@
                       @submit.prevent="submitForm($event)">
                     @csrf
 
-                    <div>
-                        <label class="block text-sm font-bold text-gray-800 mb-2 ml-1">Título:</label>
-                        <input type="text" name="titulo" value="{{ old('titulo') }}"
-                            class="w-full px-4 py-1.5 bg-gray-50 border rounded-full focus:outline-none focus:border-gray-400 text-[14px] font-medium transition-colors"
+                    <div class="flex items-center gap-2">
+                        <label class="text-[14px] font-bold text-gray-800 shrink-0">Título:</label>
+                        <input type="text" name="titulo" value="{{ old('titulo') }}" maxlength="100"
+                            @input="delete errores.titulo"
+                            class="w-full px-3 py-1.5 bg-gray-50 border rounded-full focus:outline-none focus:border-gray-400 text-[14px] font-normal transition-colors"
                             :class="errores.titulo ? 'border-rose-500' : 'border-gray-200'">
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-bold text-gray-800 mb-2 ml-1">URL de redireccionamiento:</label>
-                        <input type="text" name="url_boton" value="{{ old('url_boton') }}"
-                            class="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:border-gray-400 text-[14px] font-medium transition-colors">
+                    <div class="flex items-center gap-2">
+                        <label class="text-[14px] font-bold text-gray-800 shrink-0">URL de redireccionamiento:</label>
+                        <input type="text" name="url_boton" value="{{ old('url_boton') }}" maxlength="500"
+                            class="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:border-gray-400 text-[14px] font-normal transition-colors">
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div class="flex items-center gap-2">
                             <label class="text-[14px] font-bold text-gray-800 shrink-0">Orden de aparición:</label>
                             <input name="orden" type="text" inputmode="numeric" value="{{ old('orden', 0) }}"
                                 oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                                class="w-full px-3 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-[14px] focus:outline-none focus:border-gray-400 transition-colors">
+                                class="w-full px-3 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-[14px] font-normal focus:outline-none focus:border-gray-400 transition-colors">
                         </div>
 
-                        <div class="flex items-center gap-2" x-data="{ open: false, estado: '{{ old('estado', 1) }}', estadoTexto: '{{ old('estado', 1) == 1 ? 'Activo' : 'Inactivo' }}' }">
+                        <div class="flex items-center gap-2" x-data="{ open: false }">
                             <label class="text-[14px] font-bold text-gray-800 shrink-0">Estado:</label>
-                            <input type="hidden" name="estado" :value="estado">
+                            <input type="hidden" name="estado" :value="estadoCrear">
                             <div class="relative w-full">
                                 <button type="button" @click="open = !open"
                                     class="w-full flex items-center justify-between gap-2 pl-4 pr-3 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-[14px] text-gray-600 cursor-pointer focus:outline-none focus:border-gray-400 transition-colors">
-                                    <span x-text="estadoTexto"></span>
+                                    <span x-text="estadoTextoCrear"></span>
                                     <x-heroicon-o-chevron-down class="w-4 h-4 shrink-0" />
                                 </button>
 
-                                <div x-show="open" @click.outside="open = false"
+                                <div x-show="open" x-cloak @click.outside="open = false"
                                      x-transition:enter="transition ease-out duration-150"
                                      x-transition:enter-start="opacity-0 -translate-y-1"
                                      x-transition:enter-end="opacity-100 translate-y-0"
@@ -156,11 +202,11 @@
                                      x-transition:leave-end="opacity-0"
                                      class="absolute z-50 mt-2 w-full bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden">
                                     <div class="max-h-64 overflow-y-auto py-1">
-                                        <button type="button" @click="estado = '1'; estadoTexto = 'Activo'; open = false"
+                                        <button type="button" @click="estadoCrear = '1'; estadoTextoCrear = 'Activo'; open = false"
                                             class="w-full text-left px-4 py-2 text-sm text-gray-600 transition">
                                             Activo
                                         </button>
-                                        <button type="button" @click="estado = '0'; estadoTexto = 'Inactivo'; open = false"
+                                        <button type="button" @click="estadoCrear = '0'; estadoTextoCrear = 'Inactivo'; open = false"
                                             class="w-full text-left px-4 py-2 text-sm text-gray-600 transition">
                                             Inactivo
                                         </button>
@@ -172,7 +218,7 @@
 
                     <div>
                         <label class="block text-sm font-bold text-gray-800 mb-2 ml-1">Imagen:</label>
-                        <label x-data="{ fileName: '' }"
+                        <label
                             class="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed rounded-2xl cursor-pointer transition-all"
                             :class="errores.imagen ? 'border-rose-500 bg-rose-50/30' : 'border-gray-300 bg-gray-50 hover:border-indigo-400'">
 
@@ -195,9 +241,10 @@
                             class="flex-1 py-3.5 bg-gray-100 text-gray-700 font-bold rounded-full text-sm transition">
                             Cancelar
                         </button>
-                        <button type="submit"
-                            class="flex-1 py-3.5 bg-black text-white font-bold rounded-full text-sm transition">
-                            Aceptar
+                        <button type="submit" :disabled="submitting"
+                            class="flex-1 py-3.5 bg-black text-white font-bold rounded-full text-sm transition disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span x-show="!submitting">Aceptar</span>
+                            <span x-show="submitting" x-cloak>Guardando...</span>
                         </button>
                     </div>
                 </form>
@@ -205,38 +252,89 @@
         </div>
     </template>
 
-    {{-- MODAL EDITAR --}}
     <div x-data="{
             editModal: false,
             banner: {},
             estadoEdit: '1',
             estadoTextoEdit: 'Activo',
+            fileName: '',
+            submitting: false,
             errores: {},
-            submitEdit(e) {
+            init() {
+                @if($errors->any() && old('_method') === 'PUT')
+                    this.editModal = true;
+                @endif
+            },
+            async submitEdit(e) {
+                if (this.submitting) return;
+                this.submitting = true;
                 this.errores = {};
 
-                const titulo = e.target.querySelector('input[name=titulo]').value.trim();
+                const form = e.target;
+
+                const titulo = form.querySelector('input[name=titulo]').value.trim();
                 if (!titulo) this.errores.titulo = true;
 
                 if (Object.keys(this.errores).length > 0) {
-                    e.preventDefault();
+                    this.submitting = false;
                     return;
                 }
 
-                e.target.submit();
+                const formData = new FormData(form);
+
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                        },
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        window.dispatchEvent(new CustomEvent('toast', {
+                            detail: { type: 'success', message: data.message || 'Banner actualizado correctamente.' }
+                        }));
+                        setTimeout(() => window.location.reload(), 500);
+                    } else {
+                        if (data.errors) {
+                            Object.keys(data.errors).forEach(key => {
+                                this.errores[key] = true;
+                            });
+                            const todos = Object.values(data.errors).flat();
+                            window.dispatchEvent(new CustomEvent('toast', {
+                                detail: { type: 'error', message: todos }
+                            }));
+                        } else if (data.message) {
+                            window.dispatchEvent(new CustomEvent('toast', {
+                                detail: { type: 'error', message: data.message }
+                            }));
+                        }
+                        this.submitting = false;
+                    }
+                } catch (error) {
+                    window.dispatchEvent(new CustomEvent('toast', {
+                        detail: { type: 'error', message: 'Error de conexión. Intenta de nuevo.' }
+                    }));
+                    this.submitting = false;
+                }
             }
         }"
         @open-edit-banner.window="
             banner = $event.detail;
             estadoEdit = String(banner.estado);
             estadoTextoEdit = (banner.estado == 1) ? 'Activo' : 'Inactivo';
+            fileName = '';
             errores = {};
             editModal = true;
         ">
         <template x-if="editModal">
             <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
                 <div @click="editModal = false" class="absolute inset-0 bg-gray-900/40 backdrop-blur-md"></div>
-                <div class="relative bg-white rounded-[2.5rem] p-10 max-w-2xl w-full shadow-2xl max-h-[92vh] overflow-y-auto">
+                <div class="relative bg-white rounded-[2.5rem] p-10 max-w-lg w-full shadow-2xl max-h-[92vh] overflow-y-auto">
 
                     <div class="flex justify-between items-start mb-8">
                         <div>
@@ -253,25 +351,26 @@
                         @csrf
                         <input type="hidden" name="_method" value="PUT">
 
-                        <div>
-                            <label class="block text-sm font-bold text-gray-800 mb-2 ml-1">Título:</label>
-                            <input type="text" name="titulo" :value="banner.titulo"
-                                class="w-full px-4 py-1.5 bg-gray-50 border rounded-full focus:outline-none focus:border-gray-400 text-[14px] font-medium transition-colors"
+                        <div class="flex items-center gap-2">
+                            <label class="text-[14px] font-bold text-gray-800 shrink-0">Título:</label>
+                            <input type="text" name="titulo" :value="banner.titulo" maxlength="100"
+                                @input="delete errores.titulo"
+                                class="w-full px-3 py-1.5 bg-gray-50 border rounded-full focus:outline-none focus:border-gray-400 text-[14px] font-normal transition-colors"
                                 :class="errores.titulo ? 'border-rose-500' : 'border-gray-200'">
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-bold text-gray-800 mb-2 ml-1">URL de redireccionamiento:</label>
-                            <input type="text" name="url_boton" :value="banner.url_boton"
-                                class="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:border-gray-400 text-[14px] font-medium transition-colors">
+                        <div class="flex items-center gap-2">
+                            <label class="text-[14px] font-bold text-gray-800 shrink-0">URL de redireccionamiento:</label>
+                            <input type="text" name="url_boton" :value="banner.url_boton" maxlength="500"
+                                class="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:border-gray-400 text-[14px] font-normal transition-colors">
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div class="flex items-center gap-2">
                                 <label class="text-[14px] font-bold text-gray-800 shrink-0">Orden de aparición:</label>
                                 <input name="orden" type="text" inputmode="numeric" :value="banner.orden"
                                     oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                                    class="w-full px-3 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-[14px] focus:outline-none focus:border-gray-400 transition-colors">
+                                    class="w-full px-3 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-[14px] font-normal focus:outline-none focus:border-gray-400 transition-colors">
                             </div>
 
                             <div class="flex items-center gap-2" x-data="{ open: false }">
@@ -284,7 +383,7 @@
                                         <x-heroicon-o-chevron-down class="w-4 h-4 shrink-0" />
                                     </button>
 
-                                    <div x-show="open" @click.outside="open = false"
+                                    <div x-show="open" x-cloak @click.outside="open = false"
                                          x-transition:enter="transition ease-out duration-150"
                                          x-transition:enter-start="opacity-0 -translate-y-1"
                                          x-transition:enter-end="opacity-100 translate-y-0"
@@ -309,7 +408,8 @@
 
                         <div>
                             <label class="block text-sm font-bold text-gray-800 mb-2 ml-1">Imagen:</label>
-                            <label x-data="{ fileName: '' }" class="relative block w-full h-48 rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 cursor-pointer group">
+                            <label class="relative block w-full h-40 rounded-2xl overflow-hidden bg-gray-100 border cursor-pointer group"
+                                :class="errores.imagen ? 'border-rose-500' : 'border-gray-200'">
                                 <img :src="`/api/imagen/${banner.imagen}`"
                                      :alt="banner.titulo"
                                      class="w-full h-full object-cover">
@@ -320,7 +420,7 @@
                                 </div>
 
                                 <input type="file" name="imagen" accept="image/jpeg,image/png,image/webp" class="hidden"
-                                    @change="fileName = $event.target.files[0]?.name || ''">
+                                    @change="fileName = $event.target.files[0]?.name || ''; delete errores.imagen">
                             </label>
                         </div>
 
@@ -329,9 +429,10 @@
                                 class="flex-1 py-3.5 bg-gray-100 text-gray-700 font-bold rounded-full text-sm transition">
                                 Cancelar
                             </button>
-                            <button type="submit"
-                                class="flex-1 py-3.5 bg-black text-white font-bold rounded-full text-sm transition">
-                                Aceptar
+                            <button type="submit" :disabled="submitting"
+                                class="flex-1 py-3.5 bg-black text-white font-bold rounded-full text-sm transition disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span x-show="!submitting">Aceptar</span>
+                                <span x-show="submitting" x-cloak>Guardando...</span>
                             </button>
                         </div>
                     </form>
@@ -340,7 +441,6 @@
         </template>
     </div>
 
-    {{-- MODAL ELIMINAR --}}
     <div x-data="{ deleteModal: false, bannerDelete: {} }"
          @open-delete-banner.window="bannerDelete = $event.detail; deleteModal = true">
         <template x-if="deleteModal">

@@ -3,9 +3,6 @@
 @section('content')
     <div x-data="{ createModal: {{ $errors->any() ? 'true' : 'false' }} }">
 
-        {{-- ============================================= --}}
-        {{-- HEADER --}}
-        {{-- ============================================= --}}
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-6">
             <div>
                 <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">Categorías</h1>
@@ -19,14 +16,10 @@
             </a>
         </div>
 
-        {{-- ============================================= --}}
-        {{-- GRID DE CATEGORÍAS --}}
-        {{-- ============================================= --}}
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             @forelse($categorias as $categoria)
                 <div class="group relative bg-white border border-gray-200 rounded-[2rem] p-6 shadow-sm transition-all duration-300">
 
-                    {{-- Estado (solo visual) --}}
                     <div class="absolute top-6 right-6">
                         <span class="inline-flex items-center gap-1.5 py-1 px-3 rounded-full text-[10px] font-bold uppercase tracking-wider
                             {{ $categoria->estado_categoria
@@ -37,7 +30,6 @@
                         </span>
                     </div>
 
-                    {{-- Ícono + Nombre --}}
                     <div class="mb-6">
                         <div class="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 mb-4">
                             <x-heroicon-o-folder class="w-7 h-7" />
@@ -50,7 +42,6 @@
                         </p>
                     </div>
 
-                    {{-- Acciones --}}
                     <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
                         <button @click="$dispatch('open-edit-categoria', @js($categoria))"
                             class="inline-flex items-center gap-2 text-sm font-bold text-indigo-600 transition-all"
@@ -78,25 +69,69 @@
             @endforelse
         </div>
 
-        {{-- ============================================= --}}
-        {{-- MODAL CREAR CATEGORÍA --}}
-        {{-- ============================================= --}}
         <template x-if="createModal">
             <div class="fixed inset-0 z-[100] flex items-center justify-center p-4"
                  x-data="{
+                    estadoCrear: '1',
+                    estadoTextoCrear: 'Activo',
+                    submitting: false,
                     errores: {},
-                    submitForm(e) {
+                    async submitForm(e) {
+                        if (this.submitting) return;
+                        this.submitting = true;
                         this.errores = {};
 
-                        const nombre = e.target.querySelector('input[name=nombre_categoria]').value.trim();
+                        const form = e.target;
+
+                        const nombre = form.querySelector('input[name=nombre_categoria]').value.trim();
                         if (!nombre) this.errores.nombre_categoria = true;
 
                         if (Object.keys(this.errores).length > 0) {
-                            e.preventDefault();
+                            this.submitting = false;
                             return;
                         }
 
-                        e.target.submit();
+                        const formData = new FormData(form);
+
+                        try {
+                            const response = await fetch(form.action, {
+                                method: 'POST',
+                                body: formData,
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'Accept': 'application/json',
+                                },
+                            });
+
+                            const data = await response.json();
+
+                            if (response.ok) {
+                                window.dispatchEvent(new CustomEvent('toast', {
+                                    detail: { type: 'success', message: data.message || 'Categoría creada correctamente.' }
+                                }));
+                                setTimeout(() => window.location.reload(), 500);
+                            } else {
+                                if (data.errors) {
+                                    Object.keys(data.errors).forEach(key => {
+                                        this.errores[key] = true;
+                                    });
+                                    const todos = Object.values(data.errors).flat();
+                                    window.dispatchEvent(new CustomEvent('toast', {
+                                        detail: { type: 'error', message: todos }
+                                    }));
+                                } else if (data.message) {
+                                    window.dispatchEvent(new CustomEvent('toast', {
+                                        detail: { type: 'error', message: data.message }
+                                    }));
+                                }
+                                this.submitting = false;
+                            }
+                        } catch (error) {
+                            window.dispatchEvent(new CustomEvent('toast', {
+                                detail: { type: 'error', message: 'Error de conexión. Intenta de nuevo.' }
+                            }));
+                            this.submitting = false;
+                        }
                     }
                  }">
                 <div @click="createModal = false" class="absolute inset-0 bg-gray-900/40 backdrop-blur-md"></div>
@@ -104,7 +139,6 @@
                     <div class="flex justify-between items-start mb-8">
                         <div>
                             <h2 class="text-2xl font-bold text-gray-900">Nueva Categoría</h2>
-                            <p class="text-gray-500 mt-1 text-sm font-medium">Crea una nueva categoría para tus productos.</p>
                         </div>
                         <button @click="createModal = false" class="text-gray-500 transition -mt-1">
                             <x-heroicon-o-x-mark class="w-6 h-6" />
@@ -115,11 +149,46 @@
                           @submit.prevent="submitForm($event)">
                         @csrf
 
-                        <div>
-                            <label class="block text-sm font-bold text-gray-800 mb-2 ml-1">Nombre</label>
-                            <input type="text" name="nombre_categoria" autofocus
-                                class="w-full px-4 py-1.5 bg-gray-50 border rounded-full focus:outline-none focus:border-gray-400 text-[14px] font-medium transition-colors"
-                                :class="errores.nombre_categoria ? 'border-rose-500' : 'border-gray-200'">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="flex items-center gap-2">
+                                <label class="text-[14px] font-bold text-gray-800 shrink-0">Nombre:</label>
+                                <input type="text" name="nombre_categoria" autofocus
+                                    @input="delete errores.nombre_categoria"
+                                    class="w-full px-3 py-1.5 bg-gray-50 border rounded-full focus:outline-none focus:border-gray-400 text-[14px] font-normal transition-colors"
+                                    :class="errores.nombre_categoria ? 'border-rose-500' : 'border-gray-200'">
+                            </div>
+
+                            <div class="flex items-center gap-2" x-data="{ open: false }">
+                                <label class="text-[14px] font-bold text-gray-800 shrink-0">Estado:</label>
+                                <input type="hidden" name="estado_categoria" :value="estadoCrear">
+                                <div class="relative w-full">
+                                    <button type="button" @click="open = !open"
+                                        class="w-full flex items-center justify-between gap-2 pl-4 pr-3 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-[14px] text-gray-600 cursor-pointer focus:outline-none focus:border-gray-400 transition-colors">
+                                        <span x-text="estadoTextoCrear"></span>
+                                        <x-heroicon-o-chevron-down class="w-4 h-4 shrink-0" />
+                                    </button>
+
+                                    <div x-show="open" x-cloak @click.outside="open = false"
+                                         x-transition:enter="transition ease-out duration-150"
+                                         x-transition:enter-start="opacity-0 -translate-y-1"
+                                         x-transition:enter-end="opacity-100 translate-y-0"
+                                         x-transition:leave="transition ease-in duration-100"
+                                         x-transition:leave-start="opacity-100"
+                                         x-transition:leave-end="opacity-0"
+                                         class="absolute z-50 mt-2 w-full bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden">
+                                        <div class="max-h-64 overflow-y-auto py-1">
+                                            <button type="button" @click="estadoCrear = '1'; estadoTextoCrear = 'Activo'; open = false"
+                                                class="w-full text-left px-4 py-2 text-sm text-gray-600 transition">
+                                                Activo
+                                            </button>
+                                            <button type="button" @click="estadoCrear = '0'; estadoTextoCrear = 'Inactivo'; open = false"
+                                                class="w-full text-left px-4 py-2 text-sm text-gray-600 transition">
+                                                Inactivo
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="flex gap-3 pt-2">
@@ -127,9 +196,10 @@
                                 class="flex-1 py-3.5 bg-gray-100 text-gray-700 font-bold rounded-full text-sm transition">
                                 Cancelar
                             </button>
-                            <button type="submit"
-                                class="flex-1 py-3.5 bg-black text-white font-bold rounded-full text-sm transition">
-                                Aceptar
+                            <button type="submit" :disabled="submitting"
+                                class="flex-1 py-3.5 bg-black text-white font-bold rounded-full text-sm transition disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span x-show="!submitting">Aceptar</span>
+                                <span x-show="submitting" x-cloak>Guardando...</span>
                             </button>
                         </div>
                     </form>
@@ -137,27 +207,74 @@
             </div>
         </template>
 
-        {{-- ============================================= --}}
-        {{-- MODAL EDITAR CATEGORÍA --}}
-        {{-- ============================================= --}}
         <div x-data="{
                 editModal: false,
                 categoria: {},
                 estadoEdit: '1',
                 estadoTextoEdit: 'Activo',
+                submitting: false,
                 errores: {},
-                submitEdit(e) {
+                init() {
+                    @if($errors->any() && old('_method') === 'PUT')
+                        this.editModal = true;
+                    @endif
+                },
+                async submitEdit(e) {
+                    if (this.submitting) return;
+                    this.submitting = true;
                     this.errores = {};
 
-                    const nombre = e.target.querySelector('input[name=nombre_categoria]').value.trim();
+                    const form = e.target;
+
+                    const nombre = form.querySelector('input[name=nombre_categoria]').value.trim();
                     if (!nombre) this.errores.nombre_categoria = true;
 
                     if (Object.keys(this.errores).length > 0) {
-                        e.preventDefault();
+                        this.submitting = false;
                         return;
                     }
 
-                    e.target.submit();
+                    const formData = new FormData(form);
+
+                    try {
+                        const response = await fetch(form.action, {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                            },
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            window.dispatchEvent(new CustomEvent('toast', {
+                                detail: { type: 'success', message: data.message || 'Categoría actualizada correctamente.' }
+                            }));
+                            setTimeout(() => window.location.reload(), 500);
+                        } else {
+                            if (data.errors) {
+                                Object.keys(data.errors).forEach(key => {
+                                    this.errores[key] = true;
+                                });
+                                const todos = Object.values(data.errors).flat();
+                                window.dispatchEvent(new CustomEvent('toast', {
+                                    detail: { type: 'error', message: todos }
+                                }));
+                            } else if (data.message) {
+                                window.dispatchEvent(new CustomEvent('toast', {
+                                    detail: { type: 'error', message: data.message }
+                                }));
+                            }
+                            this.submitting = false;
+                        }
+                    } catch (error) {
+                        window.dispatchEvent(new CustomEvent('toast', {
+                            detail: { type: 'error', message: 'Error de conexión. Intenta de nuevo.' }
+                        }));
+                        this.submitting = false;
+                    }
                 }
             }"
             @open-edit-categoria.window="
@@ -170,7 +287,7 @@
             <template x-if="editModal">
                 <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
                     <div @click="editModal = false" class="absolute inset-0 bg-gray-900/40 backdrop-blur-md"></div>
-                    <div class="relative bg-white rounded-[2.5rem] p-10 max-w-2xl w-full shadow-2xl">
+                    <div class="relative bg-white rounded-[2.5rem] p-10 max-w-lg w-full shadow-2xl">
 
                         <div class="flex justify-between items-start mb-8">
                             <div>
@@ -187,17 +304,15 @@
                             @csrf
                             <input type="hidden" name="_method" value="PUT">
 
-                            {{-- Nombre y Estado en UNA SOLA FILA --}}
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                {{-- Nombre --}}
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div class="flex items-center gap-2">
                                     <label class="text-[14px] font-bold text-gray-800 shrink-0">Nombre:</label>
                                     <input type="text" name="nombre_categoria" :value="categoria.nombre_categoria"
-                                        class="w-full px-3 py-1.5 border rounded-full bg-gray-50 text-[14px] focus:outline-none focus:border-gray-400 font-medium transition-colors"
+                                        @input="delete errores.nombre_categoria"
+                                        class="w-full px-3 py-1.5 border rounded-full bg-gray-50 text-[14px] focus:outline-none focus:border-gray-400 font-normal transition-colors"
                                         :class="errores.nombre_categoria ? 'border-rose-500' : 'border-gray-200'">
                                 </div>
 
-                                {{-- Estado con dropdown --}}
                                 <div class="flex items-center gap-2" x-data="{ open: false }">
                                     <label class="text-[14px] font-bold text-gray-800 shrink-0">Estado:</label>
                                     <input type="hidden" name="estado_categoria" :value="estadoEdit">
@@ -208,7 +323,7 @@
                                             <x-heroicon-o-chevron-down class="w-4 h-4 shrink-0" />
                                         </button>
 
-                                        <div x-show="open" @click.outside="open = false"
+                                        <div x-show="open" x-cloak @click.outside="open = false"
                                              x-transition:enter="transition ease-out duration-150"
                                              x-transition:enter-start="opacity-0 -translate-y-1"
                                              x-transition:enter-end="opacity-100 translate-y-0"
@@ -236,9 +351,10 @@
                                     class="flex-1 py-3.5 bg-gray-100 text-gray-700 font-bold rounded-full text-sm transition">
                                     Cancelar
                                 </button>
-                                <button type="submit"
-                                    class="flex-1 py-3.5 bg-black text-white font-bold rounded-full text-sm transition">
-                                    Aceptar
+                                <button type="submit" :disabled="submitting"
+                                    class="flex-1 py-3.5 bg-black text-white font-bold rounded-full text-sm transition disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <span x-show="!submitting">Aceptar</span>
+                                    <span x-show="submitting" x-cloak>Guardando...</span>
                                 </button>
                             </div>
                         </form>
@@ -247,9 +363,6 @@
             </template>
         </div>
 
-        {{-- ============================================= --}}
-        {{-- MODAL ELIMINAR CATEGORÍA --}}
-        {{-- ============================================= --}}
         <div x-data="{ deleteModal: false, categoriaDelete: {} }"
              @open-delete-categoria.window="categoriaDelete = $event.detail; deleteModal = true">
             <template x-if="deleteModal">

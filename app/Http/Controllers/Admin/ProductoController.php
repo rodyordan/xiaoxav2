@@ -9,6 +9,7 @@ use App\Models\ProductoVariante;
 use App\Models\ProductoVarianteImagen;
 use App\Models\Categoria;
 use Illuminate\Support\Facades\File;
+use Illuminate\Validation\Rule;
 use App\Services\PusherBeamsService;
 
 class ProductoController extends Controller
@@ -28,17 +29,14 @@ class ProductoController extends Controller
         $query = Producto::with(['variantes.imagenes'])
             ->where('nombre_producto', 'LIKE', '%' . $buscar . '%');
 
-        // Filtro por categoría
         if ($request->filled('categoria')) {
             $query->where('id_categoria', $request->categoria);
         }
 
-        // Filtro por marca
         if ($request->filled('marca')) {
             $query->where('marca', $request->marca);
         }
 
-        // Filtro por stock
         if ($request->filled('stock')) {
             switch ($request->stock) {
                 case 'agotado':
@@ -77,44 +75,87 @@ class ProductoController extends Controller
 
     public function store(Request $request)
     {
+        $request->merge([
+            'nombre_producto' => mb_convert_case(trim((string) $request->nombre_producto), MB_CASE_TITLE, 'UTF-8'),
+            'marca' => $request->filled('marca') ? mb_strtoupper(trim((string) $request->marca), 'UTF-8') : null,
+        ]);
+
+        $detalles = collect($request->detalles ?? [])
+            ->map(fn($d) => trim((string) $d))
+            ->filter(fn($d) => $d !== '' && $d !== null)
+            ->values()
+            ->toArray();
+        $request->merge(['detalles' => $detalles]);
+
+        $variantes = collect($request->variantes ?? [])->map(function ($v) {
+            return array_merge($v, [
+                'talla' => trim((string) ($v['talla'] ?? '')),
+                'color' => isset($v['color']) ? trim((string) $v['color']) : null,
+                'sku'   => isset($v['sku']) && $v['sku'] !== '' ? trim((string) $v['sku']) : null,
+            ]);
+        })->toArray();
+        $request->merge(['variantes' => $variantes]);
+
         $request->validate([
-            'nombre_producto' => 'required|string|max:150',
-            'id_categoria' => 'required|exists:categoria,id_categoria',
+            'nombre_producto' => 'required|string|max:150|unique:producto,nombre_producto',
+            'id_categoria' => 'required|integer|exists:categoria,id_categoria',
             'precio' => 'required|numeric|min:0',
             'precio_oferta' => 'nullable|numeric|min:0|lt:precio',
+            'marca' => 'nullable|string|max:50',
+            'detalles' => 'nullable|array',
+            'detalles.*' => 'string|max:200',
             'variantes' => 'required|array|min:1',
             'variantes.*.talla' => 'required|string|max:50',
+            'variantes.*.color' => 'nullable|string|max:50',
+            'variantes.*.color_hex' => ['nullable', 'string', 'max:7', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'variantes.*.stock' => 'required|integer|min:0',
             'variantes.*.sku' => 'nullable|string|max:50|distinct|unique:producto_variante,sku',
             'variantes.*.imagenes' => 'nullable|array',
             'variantes.*.imagenes.*' => 'image|mimes:jpg,jpeg,png,webp|max:4096',
         ], [
+            'nombre_producto.required' => 'El nombre del producto es obligatorio.',
+            'nombre_producto.max' => 'El nombre del producto no puede tener más de 150 caracteres.',
+            'nombre_producto.unique' => 'Ya existe un producto con ese nombre.',
             'id_categoria.required' => 'Debes seleccionar una categoría.',
             'id_categoria.exists' => 'La categoría seleccionada no es válida.',
+            'precio.required' => 'El precio es obligatorio.',
+            'precio.numeric' => 'El precio debe ser un número.',
+            'precio.min' => 'El precio no puede ser negativo.',
+            'precio_oferta.numeric' => 'El precio de oferta debe ser un número.',
+            'precio_oferta.lt' => 'El precio de oferta debe ser menor que el precio.',
+            'marca.max' => 'La marca no puede tener más de 50 caracteres.',
+            'detalles.*.max' => 'Cada detalle no puede tener más de 200 caracteres.',
+            'variantes.required' => 'Debes agregar al menos una variante.',
+            'variantes.min' => 'Debes agregar al menos una variante.',
+            'variantes.*.talla.required' => 'La talla es obligatoria en cada variante.',
+            'variantes.*.talla.max' => 'La talla no puede tener más de 50 caracteres.',
+            'variantes.*.color.max' => 'El color no puede tener más de 50 caracteres.',
+            'variantes.*.color_hex.regex' => 'El color debe estar en formato hex válido (#RRGGBB).',
+            'variantes.*.stock.required' => 'El stock es obligatorio en cada variante.',
+            'variantes.*.stock.integer' => 'El stock debe ser un número entero.',
+            'variantes.*.stock.min' => 'El stock no puede ser negativo.',
+            'variantes.*.sku.distinct' => 'No puedes repetir el mismo SKU en varias variantes.',
+            'variantes.*.sku.unique' => 'El SKU ya está en uso.',
+            'variantes.*.imagenes.*.image' => 'Cada archivo debe ser una imagen válida.',
+            'variantes.*.imagenes.*.mimes' => 'Solo se permiten JPG, JPEG, PNG o WEBP.',
+            'variantes.*.imagenes.*.max' => 'Cada imagen no debe pesar más de 4MB.',
         ]);
 
-        // Validar combinaciones duplicadas
         $combinaciones = collect($request->variantes)->map(fn($v) =>
-            strtolower(trim($v['talla'])) . '-' . strtolower(trim($v['color'] ?? ''))
+            strtolower($v['talla']) . '-' . strtolower($v['color'] ?? '')
         );
         if ($combinaciones->duplicates()->isNotEmpty()) {
-            return back()->withErrors(['variantes' => 'No puedes repetir la misma combinación de Talla y Color.'])->withInput();
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'variantes' => ['No puedes repetir la misma combinación de Talla y Color.'],
+            ]);
         }
 
-        // Detalles: filtrar vacíos
-        $detalles = collect($request->detalles ?? [])
-            ->filter(fn($d) => !empty(trim($d)))
-            ->values()
-            ->toArray();
-
-        // Crear producto (SIN descripcion)
         $producto = Producto::create(array_merge($request->only([
             'nombre_producto', 'precio', 'precio_oferta', 'marca', 'id_categoria'
         ]), [
-            'detalles' => $detalles
+            'detalles' => $request->detalles
         ]));
 
-        // Crear variantes + imágenes (imágenes opcionales)
         foreach ($request->variantes as $index => $v) {
             $variante = $producto->variantes()->create([
                 'talla' => $v['talla'],
@@ -124,7 +165,6 @@ class ProductoController extends Controller
                 'sku' => $v['sku'] ?? $this->generarSku($producto->nombre_producto, $v['talla']),
             ]);
 
-            // Guardar imágenes de la variante (solo si las hay)
             if (isset($v['imagenes']) && is_array($v['imagenes'])) {
                 foreach ($v['imagenes'] as $orden => $foto) {
                     if (!$foto instanceof \Illuminate\Http\UploadedFile) {
@@ -145,6 +185,13 @@ class ProductoController extends Controller
             $this->pusherBeams->enviarLanzamiento($producto->nombre_producto, $categoriaNombre);
         } catch (\Exception $e) {}
 
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Producto creado exitosamente.',
+            ]);
+        }
+
         return redirect()->route('admin.productos.index')->with('success', 'Producto creado exitosamente.');
     }
 
@@ -163,43 +210,93 @@ class ProductoController extends Controller
         $teniaOfertaAntes = !is_null($producto->precio_oferta) && $producto->precio_oferta > 0;
         $precioOfertaAntes = $producto->precio_oferta;
 
-        $request->validate([
-            'nombre_producto' => 'required|string|max:150',
+        $request->merge([
+            'nombre_producto' => mb_convert_case(trim((string) $request->nombre_producto), MB_CASE_TITLE, 'UTF-8'),
+            'marca' => $request->filled('marca') ? mb_strtoupper(trim((string) $request->marca), 'UTF-8') : null,
+        ]);
+
+        $detalles = collect($request->detalles ?? [])
+            ->map(fn($d) => trim((string) $d))
+            ->filter(fn($d) => $d !== '' && $d !== null)
+            ->values()
+            ->toArray();
+        $request->merge(['detalles' => $detalles]);
+
+        $variantes = collect($request->variantes ?? [])->map(function ($v) {
+            return array_merge($v, [
+                'talla' => trim((string) ($v['talla'] ?? '')),
+                'color' => isset($v['color']) ? trim((string) $v['color']) : null,
+                'sku'   => isset($v['sku']) && $v['sku'] !== '' ? trim((string) $v['sku']) : null,
+            ]);
+        })->toArray();
+        $request->merge(['variantes' => $variantes]);
+
+        $rules = [
+            'nombre_producto' => 'required|string|max:150|unique:producto,nombre_producto,' . $producto->id_producto . ',id_producto',
             'precio' => 'required|numeric|min:0',
             'precio_oferta' => 'nullable|numeric|min:0|lt:precio',
+            'marca' => 'nullable|string|max:50',
+            'estado_producto' => 'nullable|in:0,1',
+            'detalles' => 'nullable|array',
+            'detalles.*' => 'string|max:500',
             'variantes' => 'required|array|min:1',
             'variantes.*.talla' => 'required|string|max:50',
+            'variantes.*.color' => 'nullable|string|max:50',
+            'variantes.*.color_hex' => ['nullable', 'string', 'max:7', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'variantes.*.stock' => 'required|integer|min:0',
-            'variantes.*.sku' => 'required|string|max:50|distinct',
             'variantes.*.imagenes' => 'nullable|array',
             'variantes.*.imagenes.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+        ];
+
+        foreach ($request->variantes as $index => $v) {
+            $rules["variantes.{$index}.sku"] = [
+                'required',
+                'string',
+                'max:50',
+                'distinct',
+                Rule::unique('producto_variante', 'sku')->ignore($v['id_variante'] ?? null, 'id_variante'),
+            ];
+        }
+
+        $request->validate($rules, [
+            'nombre_producto.required' => 'El nombre del producto es obligatorio.',
+            'nombre_producto.max' => 'El nombre del producto no puede tener más de 150 caracteres.',
+            'nombre_producto.unique' => 'Ya existe un producto con ese nombre.',
+            'precio.required' => 'El precio es obligatorio.',
+            'precio.numeric' => 'El precio debe ser un número.',
+            'precio.min' => 'El precio no puede ser negativo.',
+            'precio_oferta.numeric' => 'El precio de oferta debe ser un número.',
+            'precio_oferta.lt' => 'El precio de oferta debe ser menor que el precio.',
+            'marca.max' => 'La marca no puede tener más de 50 caracteres.',
+            'detalles.*.max' => 'Cada detalle no puede tener más de 500 caracteres.',
+            'variantes.required' => 'Debes agregar al menos una variante.',
+            'variantes.min' => 'Debes agregar al menos una variante.',
+            'variantes.*.talla.required' => 'La talla es obligatoria en cada variante.',
+            'variantes.*.talla.max' => 'La talla no puede tener más de 50 caracteres.',
+            'variantes.*.color.max' => 'El color no puede tener más de 50 caracteres.',
+            'variantes.*.color_hex.regex' => 'El color debe estar en formato hex válido (#RRGGBB).',
+            'variantes.*.stock.required' => 'El stock es obligatorio en cada variante.',
+            'variantes.*.stock.integer' => 'El stock debe ser un número entero.',
+            'variantes.*.stock.min' => 'El stock no puede ser negativo.',
+            'variantes.*.sku.required' => 'El SKU es obligatorio en cada variante.',
+            'variantes.*.sku.distinct' => 'No puedes repetir el mismo SKU en varias variantes.',
+            'variantes.*.sku.unique' => 'El SKU ya está en uso.',
+            'variantes.*.imagenes.*.image' => 'Cada archivo debe ser una imagen válida.',
+            'variantes.*.imagenes.*.mimes' => 'Solo se permiten JPG, JPEG, PNG o WEBP.',
+            'variantes.*.imagenes.*.max' => 'Cada imagen no debe pesar más de 4MB.',
         ]);
 
         $combinaciones = collect($request->variantes)->map(fn($v) =>
-            strtolower(trim($v['talla'])) . '-' . strtolower(trim($v['color'] ?? ''))
+            strtolower($v['talla']) . '-' . strtolower($v['color'] ?? '')
         );
         if ($combinaciones->duplicates()->isNotEmpty()) {
-            return back()->withErrors(['variantes' => 'Hay combinaciones de Talla y Color duplicadas.'])->withInput();
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'variantes' => ['Hay combinaciones de Talla y Color duplicadas.'],
+            ]);
         }
 
-        foreach ($request->variantes as $index => $v) {
-            $exists = ProductoVariante::where('sku', $v['sku'])
-                ->where('id_producto', '!=', $producto->id_producto)
-                ->exists();
-            if ($exists) {
-                return back()->withErrors(["variantes.$index.sku" => "El SKU '{$v['sku']}' ya está en uso."])->withInput();
-            }
-        }
-
-        // Detalles
-        $detalles = collect($request->detalles ?? [])
-            ->filter(fn($d) => !empty(trim($d)))
-            ->values()
-            ->toArray();
-
-        // SIN descripcion ni promocion
         $datos = $request->only(['nombre_producto', 'precio', 'precio_oferta', 'marca', 'estado_producto', 'id_categoria']);
-        $datos['detalles'] = $detalles;
+        $datos['detalles'] = $request->detalles;
 
         $producto->update($datos);
 
@@ -218,7 +315,6 @@ class ProductoController extends Controller
             );
             $idsEnviados[] = $variante->id_variante;
 
-            // Eliminar imágenes marcadas
             if (isset($v['imagenes_eliminar']) && is_array($v['imagenes_eliminar'])) {
                 foreach ($v['imagenes_eliminar'] as $idImagen) {
                     $img = ProductoVarianteImagen::find($idImagen);
@@ -230,7 +326,6 @@ class ProductoController extends Controller
                 }
             }
 
-            // Agregar nuevas imágenes (opcional)
             if (isset($v['imagenes']) && is_array($v['imagenes'])) {
                 $ordenMax = $variante->imagenes()->max('orden') ?? -1;
                 foreach ($v['imagenes'] as $foto) {
@@ -247,7 +342,6 @@ class ProductoController extends Controller
             }
         }
 
-        // Eliminar variantes que ya no están
         $variantesAEliminar = $producto->variantes()->whereNotIn('id_variante', $idsEnviados)->get();
         foreach ($variantesAEliminar as $vElim) {
             foreach ($vElim->imagenes as $img) {
@@ -258,13 +352,19 @@ class ProductoController extends Controller
             $vElim->delete();
         }
 
-        // Pusher Beams
         $tieneOfertaAhora = !is_null($request->precio_oferta) && $request->precio_oferta > 0;
         if ($tieneOfertaAhora && (!$teniaOfertaAntes || $precioOfertaAntes != $request->precio_oferta)) {
             try {
                 $categoriaNombre = $producto->categoria->nombre_categoria ?? '';
                 $this->pusherBeams->enviarOferta($producto->nombre_producto, $request->precio_oferta, $categoriaNombre);
             } catch (\Exception $e) {}
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Producto actualizado correctamente.',
+            ]);
         }
 
         return redirect()->route('admin.productos.index')->with('success', 'Producto actualizado correctamente');
@@ -301,12 +401,10 @@ class ProductoController extends Controller
     {
         $producto = Producto::with(['variantes.imagenes'])->findOrFail($id);
 
-        // 1. Verificar que no tenga stock
         if ($producto->variantes()->where('stock', '>', 0)->exists()) {
-            return redirect()->back()->with('error', 'No se puede eliminar un producto con stock.');
+            return redirect()->back()->with('error', ['No se puede eliminar un producto con stock.']);
         }
 
-        // 2. Eliminar imágenes (archivo físico + registro) y variantes
         foreach ($producto->variantes as $variante) {
             foreach ($variante->imagenes as $img) {
                 $ruta = storage_path('app/public/variantes/' . $img->imagen);
@@ -318,11 +416,9 @@ class ProductoController extends Controller
             $variante->delete();
         }
 
-        // 3. Ahora sí, eliminar el producto
         $idCat = $producto->id_categoria;
         $producto->delete();
 
-        // 4. Actualizar estado de la categoría
         $this->actualizarEstadoCategoria($idCat);
 
         return redirect()->route('admin.productos.index')->with('success', 'Producto eliminado.');
