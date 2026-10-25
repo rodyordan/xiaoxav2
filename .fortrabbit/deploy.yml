@@ -9,5 +9,7 @@ build:
     - php artisan db:seed --class=DatosBaseSeeder --force
     - php artisan config:clear
     - php artisan optimize
-  excludes:
-    - storage/
+distribution:
+  strategy: replace
+  excludePatterns:
+    - /storage
