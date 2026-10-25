@@ -4,7 +4,6 @@
 
     <div x-data="{ deleteModal: false, activeId: null, errorStockModal: false }">
 
-        {{-- Header de la Sección --}}
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8">
             <div>
                 <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">Productos</h1>
@@ -18,7 +17,6 @@
             </a>
         </div>
 
-        {{-- Buscador + Filtros --}}
         <form action="{{ route('admin.productos.index') }}" method="GET"
             x-data="{
                 categoria: '',
@@ -53,7 +51,6 @@
             class="mb-6 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
             <div class="flex items-center gap-4 w-full flex-wrap">
 
-                {{-- Buscador --}}
                 <span class="text-sm font-bold text-gray-700 shrink-0">Buscar:</span>
                 <div class="relative flex-1 min-w-[295px] max-w-[400px]">
                     <span class="absolute inset-y-0 left-4 flex items-center text-gray-800">
@@ -63,10 +60,8 @@
                         class="w-full pl-12 pr-4 py-1.5 bg-[#f1f1f1] border border-gray-200 rounded-full text-gray-800 placeholder-gray-800 focus:outline-none focus:border-gray-400 transition-colors text-sm">
                 </div>
 
-                {{-- Etiqueta Filtros --}}
                 <span class="text-sm font-bold text-gray-700 shrink-0">Filtros:</span>
 
-                {{-- Select custom: Categoría --}}
                 <div x-data="{ open: false }" class="relative w-full max-w-[180px]">
                     <input type="hidden" name="categoria" :value="categoria">
 
@@ -95,7 +90,6 @@
                     </div>
                 </div>
 
-                {{-- Select custom: Marca --}}
                 <div x-data="{ open: false }" class="relative w-full max-w-[180px]">
                     <input type="hidden" name="marca" :value="marca">
 
@@ -124,7 +118,6 @@
                     </div>
                 </div>
 
-                {{-- Select custom: Stock --}}
                 <div x-data="{ open: false }" class="relative w-full max-w-[180px]">
                     <input type="hidden" name="stock" :value="stock">
 
@@ -159,10 +152,8 @@
                     </div>
                 </div>
 
-                {{-- Espaciador --}}
                 <div class="flex-1"></div>
 
-                {{-- Botón Filtrar --}}
                 <button type="submit"
                     class="shrink-0 px-6 py-1.5 bg-indigo-600 text-white rounded-full font-bold text-sm transition-colors duration-200">
                     Filtrar
@@ -171,7 +162,6 @@
             </div>
         </form>
 
-        {{-- Contenedor de la Tabla --}}
         <div class="bg-white rounded-[2.5rem] border border-gray-200 shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
@@ -269,7 +259,6 @@
             </div>
         </div>
 
-        {{-- MODAL Confirmación de Eliminación --}}
         <template x-if="deleteModal">
             <div class="fixed inset-0 z-[110] flex items-center justify-center p-4">
                 <div @click="deleteModal = false" class="absolute inset-0 bg-gray-900/40 backdrop-blur-md"></div>
@@ -294,7 +283,6 @@
             </div>
         </template>
 
-        {{-- Modal Alerta de Stock --}}
         <template x-if="errorStockModal">
             <div class="fixed inset-0 z-[120] flex items-center justify-center p-4">
                 <div @click="errorStockModal = false" class="absolute inset-0 bg-gray-900/40 backdrop-blur-md"></div>
