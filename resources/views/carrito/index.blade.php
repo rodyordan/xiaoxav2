@@ -1,11 +1,9 @@
-{{-- resources/views/carrito/index.blade.php --}}
 @extends('layouts.app')
 
 @section('title', 'Mi bolsa - Xiaoxa')
 
 @section('content')
 
-{{-- ===== BREADCRUMB ===== --}}
 <div class="max-w-7xl mx-auto px-4 sm:px-8 pt-6 pb-2">
     <div class="flex items-center justify-center gap-2 flex-wrap">
         <a href="{{ route('carrito.index') }}" class="flex items-center gap-1">
@@ -24,7 +22,6 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
 
-        {{-- ===== COLUMNA IZQUIERDA: LISTA DE PRODUCTOS ===== --}}
         <div class="lg:col-span-8 min-w-0">
 
             <div class="hidden sm:grid grid-cols-12 gap-4 pb-4 mb-2 border-b border-gray-200 text-sm text-gray-800">
@@ -98,7 +95,6 @@
                     <div class="col-span-1 flex flex-col items-center gap-1">
                         <span class="sm:hidden text-xs text-gray-400 mb-1">Cantidad:</span>
 
-                        {{-- 👇 Contenedor completo del selector de cantidad --}}
                         <div class="selector-cantidad flex items-center border border-gray-200 rounded-lg overflow-hidden transition-opacity">
                             <button type="button"
                                     onclick="cambiarCantidad('{{ $id }}', -1, this)"
@@ -135,20 +131,20 @@
 
         <div class="lg:col-span-4">
             <div class="lg:sticky lg:top-24 pt-4 lg:pt-16">
+                
+                <div class="p-7 bg-transparent">
+                    <div class="flex justify-between items-center">
+                        <span class="font-semibold text-gray-800 text-sm">Total</span>
+                        <span class="font-semibold text-gray-800 text-sm total-global">
+                            S/ {{ number_format($total, 2) }}
+                        </span>
+                    </div>
 
-                {{-- Total --}}
-                <div class="flex justify-between items-center">
-                    <span class="text-gray-800 text-[16px]">Total</span>
-                    <span class="text-gray-800 text-[16px] total-global">
-                        S/ {{ number_format($total, 2) }}
-                    </span>
+                    <a href="{{ route('checkout.index') }}"
+                       class="hidden lg:flex mt-7 items-center justify-center w-full bg-gray-900 text-white rounded-full py-4 text-[14px] font-semibold transition-all uppercase">
+                        Ir a pagar
+                    </a>
                 </div>
-
-                {{-- Botón continuar --}}
-                <a href="{{ route('checkout.index') }}"
-                class="mt-5 flex items-center justify-center w-full bg-gray-900 text-white rounded-full py-4 text-xs font-bold tracking-widest hover:bg-gray-800 active:scale-[0.99] transition-all uppercase">
-                    Continuar
-                </a>
 
             </div>
         </div>
@@ -157,7 +153,6 @@
 
     @else
 
-    {{-- ===== CARRITO VACÍO ===== --}}
     <div class="flex flex-col items-center justify-center text-center py-24">
         <x-heroicon-o-shopping-bag class="w-16 h-16 mx-auto mb-4 text-gray-200" />
         <h3 class="text-lg font-bold text-gray-800 mb-2">Tu bolsa está vacía</h3>
@@ -178,9 +173,6 @@
         return {}
     }
 
-    // ══════════════════════════════════════════════════════════
-    // Cambiar cantidad sin recargar la página (AJAX)
-    // ══════════════════════════════════════════════════════════
     async function cambiarCantidad(idVariante, delta, btn) {
         const fila = btn.closest('[data-item-id]');
         if (!fila) return;
@@ -196,16 +188,13 @@
 
         const nuevaCantidad = cantidadActual + delta;
 
-        // 🗑️ Si va a bajar a 0 → eliminar el producto
         if (nuevaCantidad < 1) {
             await eliminarProducto(idVariante, fila);
             return;
         }
 
-        // Validar stock máximo
         if (nuevaCantidad > stock) return;
 
-        // 🔒 Poner todo el SELECTOR de cantidad en gris + bloquear clicks
         if (selectorEl) {
             selectorEl.style.opacity = '0.4';
             selectorEl.style.pointerEvents = 'none';
@@ -228,7 +217,6 @@
                 credentials: 'same-origin',
             });
 
-            // Actualizar UI
             cantidadEl.textContent = nuevaCantidad;
             const nuevoSubtotal = precio * nuevaCantidad;
             subtotalEl.textContent = 'S/ ' + nuevoSubtotal.toFixed(2);
@@ -238,16 +226,11 @@
         } catch (error) {
             console.error('Error al cambiar cantidad:', error);
         } finally {
-            // 🔓 Restaurar el selector y aplicar reglas según stock
             restaurarSelector(fila, nuevaCantidad, stock);
         }
     }
 
-    // ══════════════════════════════════════════════════════════
-    // Eliminar producto del carrito
-    // ══════════════════════════════════════════════════════════
     async function eliminarProducto(idVariante, fila) {
-        // 🔒 Bloquear el selector de cantidad
         const selectorEl = fila.querySelector('.selector-cantidad');
         if (selectorEl) {
             selectorEl.style.opacity = '0.4';
@@ -266,7 +249,6 @@
                 credentials: 'same-origin',
             });
 
-            // Animación de salida
             fila.style.transition = 'opacity 0.2s, transform 0.2s';
             fila.style.opacity = '0';
             fila.style.transform = 'translateX(-20px)';
@@ -275,7 +257,6 @@
                 fila.remove();
                 recalcularTotalGlobal();
 
-                // Si ya no quedan items → recargar para mostrar empty state
                 const quedanItems = document.querySelectorAll('[data-item-id]');
                 if (quedanItems.length === 0) {
                     window.location.reload();
@@ -284,7 +265,6 @@
 
         } catch (error) {
             console.error('Error al eliminar producto:', error);
-            // Restaurar en caso de error
             fila.style.opacity = '1';
             if (selectorEl) {
                 selectorEl.style.opacity = '1';
@@ -293,20 +273,15 @@
         }
     }
 
-    // ══════════════════════════════════════════════════════════
-    // Restaurar el selector de cantidad (opacidad + interacción)
-    // ══════════════════════════════════════════════════════════
     function restaurarSelector(fila, cantidad, stock) {
         const selectorEl = fila.querySelector('.selector-cantidad');
         const btnAumentar = fila.querySelector('.btn-aumentar');
 
         if (!selectorEl) return;
 
-        // Restaurar el contenedor completo (opacidad + clicks)
         selectorEl.style.opacity = '1';
         selectorEl.style.pointerEvents = 'auto';
 
-        // Reglas para el botón (+): bloquear si llegó al stock máximo
         if (btnAumentar) {
             if (cantidad >= stock) {
                 btnAumentar.classList.add('pointer-events-none', 'opacity-40');
@@ -314,14 +289,8 @@
                 btnAumentar.classList.remove('pointer-events-none', 'opacity-40');
             }
         }
-
-        // El botón (-) siempre está activo (al bajar de 1 elimina el producto)
-        // No hay que hacer nada con él
     }
 
-    // ══════════════════════════════════════════════════════════
-    // Recalcular total global
-    // ══════════════════════════════════════════════════════════
     function recalcularTotalGlobal() {
         let total = 0;
 

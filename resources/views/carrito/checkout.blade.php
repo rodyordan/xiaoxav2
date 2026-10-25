@@ -232,8 +232,8 @@
 
         <div class="lg:hidden">
             <button @click="intentarPagar"
-                class="w-full bg-gray-900 text-white rounded-full py-4 text-sm font-semibold tracking-wide hover:bg-gray-800 transition-all">
-                <span>Continuar con la compra</span>
+                class="w-full bg-gray-900 text-white rounded-full py-4 text-sm font-semibold tracking-wide transition-all">
+                <span>Ir a pagar</span>
             </button>
         </div>
 
@@ -260,13 +260,13 @@
             </div>
 
             <div class="flex justify-between items-center">
-                <span class="font-bold text-gray-800 text-[16px]">Total</span>
-                <span class="font-bold text-gray-800 text-[16px]">S/ {{ number_format($total, 2) }}</span>
+                <span class="font-semibold text-gray-800 text-sm">Total</span>
+                <span class="font-semibold text-gray-800 text-sm">S/ {{ number_format($total, 2) }}</span>
             </div>
 
             <button @click="intentarPagar"
-                class="hidden lg:flex mt-7 items-center justify-center w-full bg-gray-900 text-white rounded-full py-4 text-xs font-bold tracking-widest hover:bg-gray-800 active:scale-[0.99] transition-all uppercase">
-                <span>Continuar con la compra</span>
+                class="hidden lg:flex mt-7 items-center justify-center w-full bg-gray-900 text-white rounded-full py-4 text-[14px] font-semibold transition-all uppercase">
+                <span>Ir a pagar</span>
             </button>
 
         </div>

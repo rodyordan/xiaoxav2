@@ -53,7 +53,7 @@
 
                         @if($modoCarrito)
                             <a href="{{ route('home') }}"
-                               class="flex items-center gap-2 text-black font-bold text-xs tracking-widest uppercase hover:opacity-70 transition-opacity">
+                            class="flex items-center gap-2 text-black font-bold text-sm uppercase transition-opacity">
                                 <x-heroicon-o-shopping-bag class="h-6 w-6 text-black" />
                                 Seguir comprando
                             </a>

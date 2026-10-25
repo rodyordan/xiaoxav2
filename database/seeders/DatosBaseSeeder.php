@@ -4,12 +4,12 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class DatosBaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Tipos de entrega
         if (DB::table('tipo_entrega')->count() === 0) {
             DB::table('tipo_entrega')->insert([
                 ['id_tipo_entrega' => 1, 'nombre_tipo_entrega' => 'Retiro en tienda'],
@@ -18,7 +18,6 @@ class DatosBaseSeeder extends Seeder
             $this->command->info('Tipos de entrega insertados.');
         }
 
-        // Roles
         if (DB::table('rol')->count() === 0) {
             DB::table('rol')->insert([
                 ['id_rol' => 1, 'nombre_rol' => 'Administrador'],
@@ -27,7 +26,6 @@ class DatosBaseSeeder extends Seeder
             $this->command->info('Roles insertados.');
         }
 
-        // Tipos de documento
         if (DB::table('tipo_documento')->count() === 0) {
             DB::table('tipo_documento')->insert([
                 ['nombre_tipo_documento' => 'DNI'],
@@ -35,6 +33,20 @@ class DatosBaseSeeder extends Seeder
                 ['nombre_tipo_documento' => 'CE'],
             ]);
             $this->command->info('Tipos de documento insertados.');
+        }
+
+        if (DB::table('usuario')->where('correo', 'i2414151@continental.edu.pe')->count() === 0) {
+            DB::table('usuario')->insert([
+                'nombres' => 'Rod',
+                'apellidos' => 'Carhuancho',
+                'correo' => 'i2414151@continental.edu.pe',
+                'contrasena' => Hash::make('palkiegt1789'),
+                'id_rol' => 1,
+                'email_verified_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            $this->command->info('Usuario administrador creado.');
         }
     }
 }
