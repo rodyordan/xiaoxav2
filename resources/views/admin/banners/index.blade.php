@@ -226,7 +226,7 @@
                                 <x-heroicon-o-cloud-arrow-up class="w-8 h-8" />
                             </div>
 
-                            <span class="text-sm font-bold px-4 text-center"
+                            <span class="text-sm font-bold px-4 text-center truncate w-full max-w-[250px]"
                                 :class="errores.imagen ? 'text-rose-500' : 'text-gray-400'"
                                 x-text="fileName || 'Haz clic para subir imagen'"></span>
                             <span class="text-xs mt-1"
@@ -416,7 +416,7 @@
 
                                 <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white">
                                     <x-heroicon-o-arrow-path class="w-8 h-8 mb-2" />
-                                    <span class="text-sm font-bold" x-text="fileName || 'Cambiar imagen'"></span>
+                                    <span class="text-sm font-bold truncate max-w-[200px]" x-text="fileName || 'Cambiar imagen'"></span>
                                 </div>
 
                                 <input type="file" name="imagen" accept="image/jpeg,image/png,image/webp" class="hidden"
