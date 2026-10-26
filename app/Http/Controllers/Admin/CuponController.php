@@ -4,11 +4,19 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Cupon;
 use App\Models\CuponUsado;
+use App\Services\PusherBeamsService;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
 class CuponController extends Controller
 {
+    protected $pusherBeams;
+
+    public function __construct(PusherBeamsService $pusherBeams)
+    {
+        $this->pusherBeams = $pusherBeams;
+    }
+
     public function index(Request $request)
     {
         $query = Cupon::query();
@@ -62,7 +70,15 @@ class CuponController extends Controller
 
         $data['estado_cupon'] = $request->input('estado_cupon', 1);
 
-        Cupon::create($data);
+        $cupon = Cupon::create($data);
+
+        if ($data['estado_cupon']) {
+            $this->pusherBeams->enviarCupon(
+                $data['codigo_cupon'],
+                $data['monto_compra_minima'],
+                $data['monto_cupon']
+            );
+        }
 
         if ($request->expectsJson()) {
             return response()->json([

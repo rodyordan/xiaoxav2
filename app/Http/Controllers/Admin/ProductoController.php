@@ -180,10 +180,7 @@ class ProductoController extends Controller
             }
         }
 
-        try {
-            $categoriaNombre = $producto->categoria->nombre_categoria ?? '';
-            $this->pusherBeams->enviarLanzamiento($producto->nombre_producto, $categoriaNombre);
-        } catch (\Exception $e) {}
+        $this->pusherBeams->enviarLanzamiento($producto->nombre_producto);
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -354,10 +351,7 @@ class ProductoController extends Controller
 
         $tieneOfertaAhora = !is_null($request->precio_oferta) && $request->precio_oferta > 0;
         if ($tieneOfertaAhora && (!$teniaOfertaAntes || $precioOfertaAntes != $request->precio_oferta)) {
-            try {
-                $categoriaNombre = $producto->categoria->nombre_categoria ?? '';
-                $this->pusherBeams->enviarOferta($producto->nombre_producto, $request->precio_oferta, $categoriaNombre);
-            } catch (\Exception $e) {}
+            $this->pusherBeams->enviarOferta($producto->nombre_producto, $request->precio_oferta);
         }
 
         if ($request->expectsJson()) {

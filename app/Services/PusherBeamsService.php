@@ -8,24 +8,36 @@ use Throwable;
 
 class PusherBeamsService
 {
-    public function enviarOferta($nombreProducto, $precioOferta, $categoria = '')
+    public function enviarOferta($nombreProducto, $precioOferta)
     {
         $precio = number_format($precioOferta, 2);
 
-        $mensaje = $categoria
-            ? "$nombreProducto en $categoria ahora a solo S/ $precio"
-            : "$nombreProducto ahora a solo S/ $precio";
-
-        return $this->publicar('ofertas', 'OFERTA ESPECIAL', $mensaje);
+        return $this->publicar(
+            'ofertas',
+            '¡OFERTA ESPECIAL!',
+            "$nombreProducto ahora a solo S/ $precio"
+        );
     }
 
-    public function enviarLanzamiento($nombreProducto, $categoria = '')
+    public function enviarLanzamiento($nombreProducto)
     {
-        $mensaje = $categoria
-            ? "Ya disponible: $nombreProducto en $categoria"
-            : "Ya disponible: $nombreProducto";
+        return $this->publicar(
+            'lanzamientos',
+            '¡NUEVO PRODUCTO!',
+            "Ya disponible: $nombreProducto"
+        );
+    }
 
-        return $this->publicar('lanzamientos', 'NUEVO PRODUCTO!', $mensaje);
+    public function enviarCupon($codigo, $montoCompraMinima, $valorCupon)
+    {
+        $minimo = number_format($montoCompraMinima, 2);
+        $valor  = number_format($valorCupon, 2);
+
+        return $this->publicar(
+            'cupones',
+            "¡NUEVO CUPON: $codigo!",
+            "Por compras mayores a S/ $minimo llévate de regalo S/ $valor de descuento"
+        );
     }
 
     protected function publicar(string $interest, string $titulo, string $mensaje)
@@ -48,7 +60,6 @@ class PusherBeamsService
                 ]
             );
         } catch (Throwable $e) {
-            // Un fallo de notificaciones no debe romper el guardado del producto.
             Log::error('Error enviando notificación Beams: ' . $e->getMessage(), [
                 'interest' => $interest,
             ]);
