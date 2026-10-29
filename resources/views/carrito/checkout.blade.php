@@ -112,7 +112,7 @@
                     <label class="block text-sm font-normal text-gray-700 mb-2">Número de documento</label>
                     <input type="text" name="numero_documento"
                         x-model="numeroDocumento"
-                        @input="if(errores.numeroDocumento) delete errores.numeroDocumento"
+                        @input="numeroDocumento = numeroDocumento.replace(/[^0-9]/g, ''); if(errores.numeroDocumento) delete errores.numeroDocumento"
                         placeholder="Ingresar documento"
                         :disabled="!idTipoDocumento"
                         class="w-full border rounded-full px-4 py-2.5 text-sm placeholder-gray-400 focus:outline-none transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400"
@@ -126,7 +126,7 @@
                     <label class="block text-sm font-normal text-gray-700 mb-2">Teléfono</label>
                     <input type="text" name="telefono"
                         x-model="telefono"
-                        @input="if(errores.telefono) delete errores.telefono"
+                        @input="telefono = telefono.replace(/[^0-9]/g, ''); if(errores.telefono) delete errores.telefono"
                         placeholder="Ingresar teléfono"
                         class="w-full border rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none transition-colors"
                         :class="errores.telefono ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">
@@ -165,7 +165,7 @@
                     <label class="block text-sm font-normal text-gray-700 mb-2">Departamento</label>
                     <input type="text"
                         x-model="departamento"
-                        @input="if(errores.departamento) delete errores.departamento"
+                        @input="departamento = departamento.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); if(errores.departamento) delete errores.departamento"
                         placeholder="Ingresar departamento"
                         class="w-full border rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none transition-colors"
                         :class="errores.departamento ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">
@@ -178,7 +178,7 @@
                     <label class="block text-sm font-normal text-gray-700 mb-2">Provincia</label>
                     <input type="text"
                         x-model="provincia"
-                        @input="if(errores.provincia) delete errores.provincia"
+                        @input="provincia = provincia.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); if(errores.provincia) delete errores.provincia"
                         placeholder="Ingresar provincia"
                         class="w-full border rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none transition-colors"
                         :class="errores.provincia ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">
@@ -191,7 +191,7 @@
                     <label class="block text-sm font-normal text-gray-700 mb-2">Distrito</label>
                     <input type="text"
                         x-model="distrito"
-                        @input="if(errores.distrito) delete errores.distrito"
+                        @input="distrito = distrito.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); if(errores.distrito) delete errores.distrito"
                         placeholder="Ingresar distrito"
                         class="w-full border rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none transition-colors"
                         :class="errores.distrito ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">

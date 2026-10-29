@@ -7,62 +7,131 @@
 {{-- ===== CARRUSEL (SOLO EN HOME SIN FILTROS) ===== --}}
 @if(!request('categoria') && !request('promocion') && !request('buscar') && !request('nuevo'))
     @if(isset($banners) && $banners->count() > 0)
+    @php
+        // Si hay más de un banner se agrega una copia del primero al final
+        // para que el carrusel pueda avanzar siempre hacia la derecha sin saltos.
+        $slides = $banners->count() > 1 ? $banners->concat([$banners->first()]) : $banners;
+    @endphp
     <section class="w-full bg-white">
         <div
             x-data="{
-                current: 0,
+                pos: 0,
                 total: {{ $banners->count() }},
-                autoplay: null,
-                init() { this.startAutoplay(); },
-                startAutoplay() { this.autoplay = setInterval(() => this.next(), 5500); },
-                stopAutoplay() { clearInterval(this.autoplay); },
-                next() { this.current = (this.current + 1) % this.total; },
-                prev() { this.current = (this.current - 1 + this.total) % this.total; },
-                goTo(i) { this.current = i; this.stopAutoplay(); this.startAutoplay(); }
+                animar: true,
+                timer: null,
+                inicioX: 0,
+
+                init() { this.iniciarAutoplay(); },
+
+                actual() { return this.pos % this.total; },
+
+                iniciarAutoplay() {
+                    this.detenerAutoplay();
+                    if (this.total < 2) return;
+                    this.timer = setInterval(() => this.siguiente(), 5000);
+                },
+
+                detenerAutoplay() {
+                    if (this.timer) {
+                        clearInterval(this.timer);
+                        this.timer = null;
+                    }
+                },
+
+                siguiente() {
+                    if (this.total < 2 || this.pos >= this.total) return;
+                    this.pos++;
+                    if (this.pos === this.total) {
+                        setTimeout(() => this.saltarAlInicio(), 750);
+                    }
+                },
+
+                anterior() {
+                    if (this.total < 2) return;
+                    if (this.pos === 0) {
+                        this.animar = false;
+                        this.pos = this.total;
+                        setTimeout(() => {
+                            this.animar = true;
+                            this.pos = this.total - 1;
+                        }, 50);
+                    } else {
+                        this.pos--;
+                    }
+                },
+
+                saltarAlInicio() {
+                    if (this.pos !== this.total) return;
+                    this.animar = false;
+                    this.pos = 0;
+                    setTimeout(() => { this.animar = true; }, 50);
+                },
+
+                irA(i) {
+                    if (this.pos === this.total && i === 0) {
+                        this.saltarAlInicio();
+                    } else {
+                        this.pos = i;
+                    }
+                    this.iniciarAutoplay();
+                },
+
+                terminarToque(e) {
+                    const dx = e.changedTouches[0].clientX - this.inicioX;
+                    if (Math.abs(dx) > 50) {
+                        if (dx < 0) { this.siguiente(); } else { this.anterior(); }
+                    }
+                    this.iniciarAutoplay();
+                }
             }"
-            @mouseenter="stopAutoplay()"
-            @mouseleave="startAutoplay()"
             class="relative w-full"
         >
-            <div class="relative w-full" style="height: 750px; overflow: hidden;">
-                @foreach($banners as $index => $banner)
+            <div
+                class="relative w-full"
+                style="height: 750px; overflow: hidden; touch-action: pan-y;"
+                @touchstart.passive="inicioX = $event.touches[0].clientX; detenerAutoplay()"
+                @touchend="terminarToque($event)"
+            >
                 <div
-                    x-show="current === {{ $index }}"
-                    x-transition:enter="transition-opacity duration-700 ease-in-out"
-                    x-transition:enter-start="opacity-0"
-                    x-transition:enter-end="opacity-100"
-                    x-transition:leave="transition-opacity duration-500 ease-in-out"
-                    x-transition:leave-start="opacity-100"
-                    x-transition:leave-end="opacity-0"
-                    class="absolute inset-0 flex items-center justify-center"
+                    class="flex h-full"
+                    :style="'transform: translateX(-' + (pos * 100) + '%); transition: ' + (animar ? 'transform 700ms ease-in-out' : 'none')"
+                    @transitionend.self="saltarAlInicio()"
                 >
-                    @if($banner->url_boton)
-                        <a href="{{ $banner->url_boton }}" class="block w-full h-full">
+                    @foreach($slides as $index => $banner)
+                    <div
+                        class="w-full h-full shrink-0 flex items-center justify-center"
+                        @if($index >= $banners->count()) aria-hidden="true" @endif
+                    >
+                        @if($banner->url_boton)
+                            <a href="{{ $banner->url_boton }}" class="block w-full h-full">
+                                <img
+                                    src="{{ url('/api/imagen/' . $banner->imagen) }}"
+                                    alt="{{ $banner->titulo }}"
+                                    class="w-full h-full object-cover object-center"
+                                    loading="eager"
+                                    draggable="false"
+                                >
+                            </a>
+                        @else
                             <img
                                 src="{{ url('/api/imagen/' . $banner->imagen) }}"
                                 alt="{{ $banner->titulo }}"
                                 class="w-full h-full object-cover object-center"
-                                loading="{{ $index === 0 ? 'eager' : 'lazy' }}"
+                                loading="eager"
+                                draggable="false"
                             >
-                        </a>
-                    @else
-                        <img
-                            src="{{ url('/api/imagen/' . $banner->imagen) }}"
-                            alt="{{ $banner->titulo }}"
-                            class="w-full h-full object-cover object-center"
-                            loading="{{ $index === 0 ? 'eager' : 'lazy' }}"
-                        >
-                    @endif
+                        @endif
+                    </div>
+                    @endforeach
                 </div>
-                @endforeach
             </div>
 
             @if($banners->count() > 1)
             <div class="flex items-center justify-center gap-2 mt-3 pb-3">
                 @foreach($banners as $index => $banner)
                 <button
-                    @click="goTo({{ $index }})"
-                    :class="current === {{ $index }} ? 'w-12 h-1.5 bg-gray-600' : 'w-12 h-1.5 bg-gray-300 hover:bg-gray-400'"
+                    @click="irA({{ $index }})"
+                    :class="actual() === {{ $index }} ? 'w-12 h-1.5 bg-gray-600' : 'w-12 h-1.5 bg-gray-300 hover:bg-gray-400'"
                     class="rounded-sm transition-all duration-300"
                     aria-label="Slide {{ $index + 1 }}"
                 ></button>
