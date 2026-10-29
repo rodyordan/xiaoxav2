@@ -83,42 +83,42 @@
                                 <label class="text-xs font-semibold tracking-widest text-gray-600 block mb-2">Nombres</label>
                                 <input type="text" readonly
                                     value="{{ auth()->user()->nombres }}"
-                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-full bg-gray-50 text-sm text-gray-600 focus:outline-none">
+                                    class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-black focus:outline-none">
                             </div>
 
                             <div>
                                 <label class="text-xs font-semibold tracking-widest text-gray-600 block mb-2">Apellidos</label>
                                 <input type="text" readonly
                                     value="{{ auth()->user()->apellidos }}"
-                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-full bg-gray-50 text-sm text-gray-600 focus:outline-none">
+                                    class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-black focus:outline-none">
                             </div>
 
                             <div>
                                 <label class="text-xs font-semibold tracking-widest text-gray-600 block mb-2">Teléfono</label>
                                 <input type="text" readonly
                                     value="{{ auth()->user()->telefono ?? 'No registrado' }}"
-                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-full bg-gray-50 text-sm {{ auth()->user()->telefono ? 'text-gray-600' : 'text-gray-400' }} focus:outline-none">
+                                    class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm {{ auth()->user()->telefono ? 'text-black' : 'text-gray-400' }} focus:outline-none">
                             </div>
 
                             <div>
                                 <label class="text-xs font-semibold tracking-widest text-gray-600 block mb-2">Correo electrónico</label>
                                 <input type="text" readonly
                                     value="{{ auth()->user()->correo }}"
-                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-full bg-gray-50 text-sm text-gray-600 focus:outline-none">
+                                    class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-black focus:outline-none">
                             </div>
 
                             <div>
                                 <label class="text-xs font-semibold tracking-widest text-gray-600 block mb-2">Tipo de documento</label>
                                 <input type="text" readonly
                                     value="{{ auth()->user()->tipoDocumento->nombre_tipo_documento ?? 'No registrado' }}"
-                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-full bg-gray-50 text-sm {{ auth()->user()->tipoDocumento ? 'text-gray-600' : 'text-gray-400' }} focus:outline-none">
+                                    class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm {{ auth()->user()->tipoDocumento ? 'text-black' : 'text-gray-400' }} focus:outline-none">
                             </div>
 
                             <div>
                                 <label class="text-xs font-semibold tracking-widest text-gray-600 block mb-2">Número de documento</label>
                                 <input type="text" readonly
                                     value="{{ auth()->user()->numero_documento ?? 'No registrado' }}"
-                                    class="w-full px-4 py-2.5 border border-gray-200 rounded-full bg-gray-50 text-sm {{ auth()->user()->numero_documento ? 'text-gray-600' : 'text-gray-400' }} focus:outline-none">
+                                    class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm {{ auth()->user()->numero_documento ? 'text-black' : 'text-gray-400' }} focus:outline-none">
                             </div>
 
                         </div>
@@ -142,24 +142,30 @@
                                 <div>
                                     <label class="text-xs font-semibold tracking-widest text-gray-600 block mb-2">Nombres</label>
                                     <div class="relative">
-                                        <input type="text" name="nombres" value="{{ old('nombres', auth()->user()->nombres) }}"
-                                            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 pr-10 text-sm text-black focus:outline-none focus:border-black transition">
+                                        <input type="text" name="nombres" 
+                                            value="{{ old('nombres', auth()->user()->nombres) }}"
+                                            maxlength="50"
+                                            oninput="this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')"
+                                            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 pr-10 text-sm text-black focus:outline-none focus:border-black transition @error('nombres') border-red-500 @enderror">
                                         <x-heroicon-o-pencil class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                                     </div>
                                     @error('nombres')
-                                        <p class="text-rose-500 text-xs mt-1">{{ $message }}</p>
+                                        <p class="text-[#ED1C24] text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
 
                                 <div>
                                     <label class="text-xs font-semibold tracking-widest text-gray-600 block mb-2">Apellidos</label>
                                     <div class="relative">
-                                        <input type="text" name="apellidos" value="{{ old('apellidos', auth()->user()->apellidos) }}"
-                                            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 pr-10 text-sm text-black focus:outline-none focus:border-black transition">
+                                        <input type="text" name="apellidos" 
+                                            value="{{ old('apellidos', auth()->user()->apellidos) }}"
+                                            maxlength="50"
+                                            oninput="this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')"
+                                            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 pr-10 text-sm text-black focus:outline-none focus:border-black transition @error('apellidos') border-red-500 @enderror">
                                         <x-heroicon-o-pencil class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                                     </div>
                                     @error('apellidos')
-                                        <p class="text-rose-500 text-xs mt-1">{{ $message }}</p>
+                                        <p class="text-[#ED1C24] text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
 
@@ -171,11 +177,11 @@
                                             maxlength="9"
                                             oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                                             placeholder="Ej. 912345678"
-                                            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 pr-10 text-sm text-black focus:outline-none focus:border-black transition">
+                                            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 pr-10 text-sm text-black focus:outline-none focus:border-black transition @error('telefono') border-red-500 @enderror">
                                         <x-heroicon-o-pencil class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                                     </div>
                                     @error('telefono')
-                                        <p class="text-rose-500 text-xs mt-1">{{ $message }}</p>
+                                        <p class="text-[#ED1C24] text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
 
@@ -274,7 +280,6 @@
                                         </div>
 
                                         <div class="flex items-center gap-3 shrink-0">
-                                            {{-- Texto Ver Detalles en lugar del badge --}}
                                             <span class="text-[12px] font-bold text-gray-700">Ver detalles</span>
 
                                             <svg :class="open ? 'rotate-180' : ''" class="w-3 h-3 text-gray-700 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -71,9 +71,8 @@ class CheckoutApiController extends Controller
             $subtotal += $precio * $detalle->cantidad;
 
             $items[] = [
-                'title'       => $producto->nombre_producto
-                    . ' (' . $detalle->variante->color
-                    . ' - Talla ' . $detalle->variante->talla . ')',
+                // SE CAMBIA EL TÍTULO PARA QUE DIGA SOLO "Productos"
+                'title'       => 'Productos', 
                 'quantity'    => (int) $detalle->cantidad,
                 'unit_price'  => $precio,
                 'currency_id' => 'PEN',

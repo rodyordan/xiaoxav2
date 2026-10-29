@@ -37,10 +37,17 @@
     }
 
     $tipoDocumentoTextoInicial = 'Tipo de documento';
+    $longitudDocInicial = '8';
     if (auth()->user()->id_tipo_documento) {
         $td = $tiposDocumento->firstWhere('id_tipo_documento', auth()->user()->id_tipo_documento);
         if ($td) {
             $tipoDocumentoTextoInicial = $td->nombre_tipo_documento;
+            $nombreLower = strtolower($td->nombre_tipo_documento);
+            if (str_contains($nombreLower, 'ruc')) {
+                $longitudDocInicial = '11';
+            } elseif (str_contains($nombreLower, 'carnet') || str_contains($nombreLower, 'extranjería') || str_contains($nombreLower, 'ce')) {
+                $longitudDocInicial = '9-12';
+            }
         }
     }
 @endphp
@@ -73,13 +80,22 @@
                              x-transition:enter-start="opacity-0 -translate-y-1"
                              x-transition:enter-end="opacity-100 translate-y-0"
                              x-transition:leave="transition ease-in duration-100"
-                             x-transition:leave-start="opacity-100"
-                             x-transition:leave-end="opacity-0"
+                             x-transition:leave-start="opacity-100 translate-y-0"
+                             x-transition:leave-end="opacity-0 translate-y-1"
                              class="absolute z-50 mt-2 w-full bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden">
                             <div class="max-h-64 overflow-y-auto py-1">
                                 @foreach($tiposDocumento as $td)
+                                    @php
+                                        $nombreLower = strtolower($td->nombre_tipo_documento);
+                                        $longitud = '8';
+                                        if (str_contains($nombreLower, 'ruc')) {
+                                            $longitud = '11';
+                                        } elseif (str_contains($nombreLower, 'carnet') || str_contains($nombreLower, 'extranjería') || str_contains($nombreLower, 'ce')) {
+                                            $longitud = '9-12';
+                                        }
+                                    @endphp
                                     <button type="button"
-                                        @click="idTipoDocumento = '{{ $td->id_tipo_documento }}'; idTipoDocumentoTexto = '{{ addslashes($td->nombre_tipo_documento) }}'; open = false; if(errores.idTipoDocumento) delete errores.idTipoDocumento"
+                                        @click="idTipoDocumento = '{{ $td->id_tipo_documento }}'; idTipoDocumentoTexto = '{{ addslashes($td->nombre_tipo_documento) }}'; longDocRequerida = '{{ $longitud }}'; open = false; if(errores.idTipoDocumento) delete errores.idTipoDocumento"
                                         class="w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition">
                                         {{ $td->nombre_tipo_documento }}
                                     </button>
@@ -87,8 +103,7 @@
                             </div>
                         </div>
                     </div>
-                    <p x-show="errores.idTipoDocumento" x-cloak class="flex items-center gap-1.5 text-xs text-red-600 mt-1.5 font-medium">
-                        <x-heroicon-s-exclamation-circle class="w-3.5 h-3.5 shrink-0" />
+                    <p x-show="errores.idTipoDocumento" x-cloak class="text-xs text-red-600 mt-1.5 font-medium">
                         <span x-text="errores.idTipoDocumento"></span>
                     </p>
                 </div>
@@ -99,10 +114,10 @@
                         x-model="numeroDocumento"
                         @input="if(errores.numeroDocumento) delete errores.numeroDocumento"
                         placeholder="Ingresar documento"
-                        class="w-full border rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none transition-colors"
+                        :disabled="!idTipoDocumento"
+                        class="w-full border rounded-full px-4 py-2.5 text-sm placeholder-gray-400 focus:outline-none transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400"
                         :class="errores.numeroDocumento ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">
-                    <p x-show="errores.numeroDocumento" x-cloak class="flex items-center gap-1.5 text-xs text-red-600 mt-1.5 font-medium">
-                        <x-heroicon-s-exclamation-circle class="w-3.5 h-3.5 shrink-0" />
+                    <p x-show="errores.numeroDocumento" x-cloak class="text-xs text-red-600 mt-1.5 font-medium">
                         <span x-text="errores.numeroDocumento"></span>
                     </p>
                 </div>
@@ -115,8 +130,7 @@
                         placeholder="Ingresar teléfono"
                         class="w-full border rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none transition-colors"
                         :class="errores.telefono ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">
-                    <p x-show="errores.telefono" x-cloak class="flex items-center gap-1.5 text-xs text-red-600 mt-1.5 font-medium">
-                        <x-heroicon-s-exclamation-circle class="w-3.5 h-3.5 shrink-0" />
+                    <p x-show="errores.telefono" x-cloak class="text-xs text-red-600 mt-1.5 font-medium">
                         <span x-text="errores.telefono"></span>
                     </p>
                 </div>
@@ -155,8 +169,7 @@
                         placeholder="Ingresar departamento"
                         class="w-full border rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none transition-colors"
                         :class="errores.departamento ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">
-                    <p x-show="errores.departamento" x-cloak class="flex items-center gap-1.5 text-xs text-red-600 mt-1.5 font-medium">
-                        <x-heroicon-s-exclamation-circle class="w-3.5 h-3.5 shrink-0" />
+                    <p x-show="errores.departamento" x-cloak class="text-xs text-red-600 mt-1.5 font-medium">
                         <span x-text="errores.departamento"></span>
                     </p>
                 </div>
@@ -169,8 +182,7 @@
                         placeholder="Ingresar provincia"
                         class="w-full border rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none transition-colors"
                         :class="errores.provincia ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">
-                    <p x-show="errores.provincia" x-cloak class="flex items-center gap-1.5 text-xs text-red-600 mt-1.5 font-medium">
-                        <x-heroicon-s-exclamation-circle class="w-3.5 h-3.5 shrink-0" />
+                    <p x-show="errores.provincia" x-cloak class="text-xs text-red-600 mt-1.5 font-medium">
                         <span x-text="errores.provincia"></span>
                     </p>
                 </div>
@@ -183,8 +195,7 @@
                         placeholder="Ingresar distrito"
                         class="w-full border rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none transition-colors"
                         :class="errores.distrito ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">
-                    <p x-show="errores.distrito" x-cloak class="flex items-center gap-1.5 text-xs text-red-600 mt-1.5 font-medium">
-                        <x-heroicon-s-exclamation-circle class="w-3.5 h-3.5 shrink-0" />
+                    <p x-show="errores.distrito" x-cloak class="text-xs text-red-600 mt-1.5 font-medium">
                         <span x-text="errores.distrito"></span>
                     </p>
                 </div>
@@ -303,6 +314,7 @@
             idTipoDocumentoTexto: '{{ addslashes($tipoDocumentoTextoInicial) }}',
             numeroDocumento:      '{{ auth()->user()->numero_documento ?? '' }}',
             telefono:             '{{ auth()->user()->telefono ?? '' }}',
+            longDocRequerida:     '{{ $longitudDocInicial }}',
 
             intentarPagar() {
                 this.errores = {};
@@ -310,11 +322,27 @@
                 if (!this.idTipoDocumento) {
                     this.errores.idTipoDocumento = 'Selecciona un tipo de documento.';
                 }
-                if (!this.numeroDocumento.trim()) {
+                
+                const doc = this.numeroDocumento.trim();
+                if (!doc) {
                     this.errores.numeroDocumento = 'El número de documento es obligatorio.';
+                } else if (!/^\d+$/.test(doc)) {
+                    this.errores.numeroDocumento = 'El documento debe contener solo números.';
+                } else if (this.longDocRequerida === '9-12') {
+                    if (doc.length < 9 || doc.length > 12) {
+                        this.errores.numeroDocumento = 'El documento debe tener entre 9 y 12 dígitos.';
+                    }
+                } else if (doc.length !== parseInt(this.longDocRequerida)) {
+                    this.errores.numeroDocumento = `El documento debe tener ${this.longDocRequerida} dígitos.`;
                 }
-                if (!this.telefono.trim()) {
+                
+                const tel = this.telefono.trim();
+                if (!tel) {
                     this.errores.telefono = 'El teléfono es obligatorio.';
+                } else if (!/^\d+$/.test(tel)) {
+                    this.errores.telefono = 'El teléfono debe contener solo números.';
+                } else if (tel.length !== 9) {
+                    this.errores.telefono = 'El teléfono debe tener 9 dígitos.';
                 }
                 
                 if (this.tipoEntrega == 2) {

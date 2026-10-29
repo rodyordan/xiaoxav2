@@ -15,8 +15,6 @@ use MercadoPago\Client\Preference\PreferenceClient;
 
 class CheckoutController extends Controller
 {
-    // ── Vista del checkout ───────────────────────────────────────────────────
-
     public function index()
     {
         if (session()->has('carrito')) {
@@ -45,22 +43,53 @@ class CheckoutController extends Controller
         ));
     }
 
-
-    // ── Confirmar: guarda datos en caché y redirige a MP ────────────────────
-
     public function confirmar(Request $request)
     {
         $request->validate([
             'id_tipo_entrega'    => 'required|integer|in:1,2',
             'id_tipo_documento'  => 'required|integer|exists:tipo_documento,id_tipo_documento',
-            'numero_documento'   => 'required|string|max:20',
-            'telefono'           => 'required|string|max:20',
+            'numero_documento'   => [
+                'required',
+                'numeric',
+                function ($attribute, $value, $fail) use ($request) {
+                    $tipo = \App\Models\TipoDocumento::find($request->id_tipo_documento);
+                    
+                    if ($tipo) {
+                        $nombre = strtolower($tipo->nombre_tipo_documento);
+                        $longitud = strlen($value);
+
+                        if (str_contains($nombre, 'dni')) {
+                            if ($longitud !== 8) {
+                                $fail('El documento debe tener 8 dígitos.');
+                            }
+                        } elseif (str_contains($nombre, 'ruc')) {
+                            if ($longitud !== 11) {
+                                $fail('El documento debe tener 11 dígitos.');
+                            }
+                        } elseif (str_contains($nombre, 'carnet') || str_contains($nombre, 'extranjería') || str_contains($nombre, 'ce')) {
+                            if ($longitud < 9 || $longitud > 12) {
+                                $fail('El documento debe tener entre 9 y 12 dígitos.');
+                            }
+                        } else {
+                            if ($longitud < 8 || $longitud > 12) {
+                                $fail('El documento debe tener entre 8 y 12 dígitos.');
+                            }
+                        }
+                    }
+                },
+            ],
+            'telefono'           => 'required|numeric|digits:9',
             'departamento'       => 'nullable|string|max:100',
             'provincia'          => 'nullable|string|max:100',
             'distrito'           => 'nullable|string|max:100',
+        ], [
+            'numero_documento.required' => 'El número de documento es obligatorio.',
+            'numero_documento.numeric'  => 'El documento debe contener solo números.',
+            'telefono.required'         => 'El teléfono es obligatorio.',
+            'telefono.numeric'          => 'El teléfono debe contener solo números.',
+            'telefono.digits'           => 'El teléfono debe tener 9 dígitos.',
         ]);
 
-        // ✅ Guardar datos personales del usuario (permanente)
         $user = Auth::user();
         $user->id_tipo_documento = $request->id_tipo_documento;
         $user->numero_documento  = $request->numero_documento;
@@ -75,7 +104,6 @@ class CheckoutController extends Controller
             return back()->with('error', 'Tu carrito está vacío.');
         }
 
-        // ✅ Validar stock ANTES de mandar a pagar
         foreach ($carrito->detalles as $detalle) {
             if ($detalle->variante->stock < $detalle->cantidad) {
                 return back()->with('error',
@@ -84,7 +112,6 @@ class CheckoutController extends Controller
             }
         }
 
-        // ── Calcular subtotal e items para MP ───────────────────────────────
         $subtotal = 0;
         $items    = [];
 
@@ -101,10 +128,8 @@ class CheckoutController extends Controller
             ];
         }
 
-        // ── Total final = subtotal (sin descuento en web) ───────────────────
         $total = $subtotal;
 
-        // ── Guardar TODO el checkout en caché (2 horas) ─────────────────────
         $referencia = 'CHK-' . Auth::id() . '-' . uniqid();
 
         $checkoutData = [
@@ -125,7 +150,6 @@ class CheckoutController extends Controller
 
         Cache::put("checkout:{$referencia}", $checkoutData, now()->addHours(2));
 
-        // 🔍 Log de debug
         \Log::info('Checkout guardado', [
             'referencia'      => $referencia,
             'id_tipo_entrega' => $checkoutData['id_tipo_entrega'],
@@ -135,7 +159,6 @@ class CheckoutController extends Controller
             'id_usuario'      => Auth::id(),
         ]);
 
-        // ── Crear preferencia en MP ─────────────────────────────────────────
         MercadoPagoConfig::setAccessToken(env('MP_ACCESS_TOKEN'));
         $client = new PreferenceClient();
 

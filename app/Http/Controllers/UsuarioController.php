@@ -26,6 +26,15 @@ class UsuarioController extends Controller
             'telefono' => 'nullable|numeric|digits:9',
             'numero_documento' => 'nullable|numeric|digits_between:8,12',
             'id_tipo_documento' => 'nullable|integer|exists:tipo_documento,id_tipo_documento',
+        ], [
+            'nombres.required' => 'Los nombres son obligatorios.',
+            'nombres.max' => 'Los nombres no pueden tener más de 50 caracteres.',
+            'apellidos.required' => 'Los apellidos son obligatorios.',
+            'apellidos.max' => 'Los apellidos no pueden tener más de 50 caracteres.',
+            'telefono.numeric' => 'El teléfono debe contener solo números.',
+            'telefono.digits' => 'El teléfono debe tener 9 dígitos.', 
+            'numero_documento.numeric' => 'El documento debe contener solo números.',
+            'numero_documento.digits_between' => 'El documento debe tener entre 8 y 12 dígitos.',
         ]);
 
         $usuario->update([

@@ -34,8 +34,8 @@ return [
     'declined'               => 'El campo :attribute debe ser rechazado.',
     'declined_if'            => 'El campo :attribute debe ser rechazado cuando :other sea :value.',
     'different'              => 'El campo :attribute y :other deben ser diferentes.',
-    'digits'                 => 'El campo :attribute debe tener :digits dígitos.',
-    'digits_between'         => 'El campo :attribute debe tener entre :min y :max dígitos.',
+    'digits'                 => 'El :attribute debe tener :digits dígitos.',
+    'digits_between'         => 'El :attribute debe tener entre :min y :max dígitos.',
     'dimensions'             => 'El campo :attribute tiene dimensiones de imagen no válidas.',
     'distinct'               => 'El campo :attribute contiene un valor duplicado.',
     'doesnt_contain'         => 'El campo :attribute no debe contener ninguno de los siguientes valores: :values.',
@@ -110,7 +110,7 @@ return [
     'multiple_of'            => 'El campo :attribute debe ser múltiplo de :value',
     'not_in'                 => 'El campo :attribute no debe estar en la lista.',
     'not_regex'              => 'El formato del campo :attribute no es válido.',
-    'numeric'                => 'El campo :attribute debe ser numérico.',
+    'numeric'                => 'El :attribute debe ser numérico.',
     'password'               => [
         'letters'       => 'La :attribute debe contener al menos una letra.',
         'mixed'         => 'La :attribute debe contener al menos una letra mayúscula y una minúscula.',
@@ -284,5 +284,10 @@ return [
         'winner'                   => 'ganador',
         'work'                     => 'trabajo',
         'year'                     => 'año',
+        // AGREGADOS PERSONALIZADOS:
+        'telefono'                 => 'teléfono',
+        'nombres'                  => 'nombres',
+        'apellidos'                => 'apellidos',
+        'numero_documento'         => 'número de documento',
     ],
 ];
