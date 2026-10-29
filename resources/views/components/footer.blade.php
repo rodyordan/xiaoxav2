@@ -1,9 +1,8 @@
 <footer class="bg-black text-white py-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-8">
-        
+
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
 
-            {{-- Columna 1: Servicio al cliente --}}
             <div>
                 <h3 class="text-lg font-bold mb-4 text-white">Servicio al cliente</h3>
                 <ul class="space-y-2 text-base">
@@ -13,26 +12,23 @@
                 </ul>
             </div>
 
-            {{-- Columna 2: Contáctanos --}}
             <div>
                 <h3 class="text-lg font-bold mb-4 text-white">Contáctanos</h3>
                 <ul class="space-y-2 text-base">
                     <li class="text-white">atencion@xiaoxa.com</li>
                     <li class="text-white">Telf.: 904 646 892</li>
-                    <li class="text-white">10:00 a.m. a 8:30 p.m. de Lunes a Sábado</li>
-                    <li class="text-white">y Domingo hasta las 7:00 p.m.</li>
+                    <li class="text-white">10:00 a.m. a 8:30 p.m. de Lunes a Sábados</li>
+                    <li class="text-white">y Domingos hasta las 7:00 p.m.</li>
                     <li class="text-white">Jr. Cajamarca N° 396 - Huancayo</li>
                 </ul>
             </div>
 
-            {{-- Columna 3: Acerca de nosotros + Redes Sociales --}}
             <div>
                 <h3 class="text-lg font-bold mb-4 text-white">Acerca de nosotros</h3>
                 <ul class="space-y-2 text-base">
                     <li><a href="#" class="text-white transition-colors duration-200">Quienes somos</a></li>
                 </ul>
 
-                {{-- Redes sociales --}}
                 <div class="flex space-x-5 mt-5">
                     <a href="https://www.facebook.com/xiaoxaventas/" target="_blank" rel="noopener noreferrer"
                         class="text-white transition-colors duration-200" title="Facebook">

@@ -5,14 +5,14 @@
 @section('content')
 
 <div class="max-w-7xl mx-auto px-4 sm:px-8 pt-6 pb-2">
-    <div class="flex items-center justify-center gap-2 flex-wrap">
+    <div class="flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
         <a href="{{ route('carrito.index') }}" class="flex items-center gap-1">
-            <span class="text-[20px] font-bold text-gray-800">Mi bolsa</span>
+            <span class="text-sm sm:text-[20px] font-bold text-gray-800">Mi bolsa</span>
         </a>
-        <x-heroicon-o-chevron-right class="w-5 h-5 text-gray-400" />
-        <span class="text-[20px] font-normal text-gray-800">Datos de compra</span>
-        <x-heroicon-o-chevron-right class="w-5 h-5 text-gray-400" />
-        <span class="text-[20px] font-normal text-gray-800">Compra finalizada</span>
+        <x-heroicon-o-chevron-right class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" />
+        <span class="text-sm sm:text-[20px] font-normal text-gray-800">Datos de compra</span>
+        <x-heroicon-o-chevron-right class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" />
+        <span class="text-sm sm:text-[20px] font-normal text-gray-800">Compra finalizada</span>
     </div>
 </div>
 
@@ -33,12 +33,12 @@
 
             <div class="divide-y divide-gray-200">
                 @foreach($items as $id => $detalles)
-                <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center py-6"
+                <div class="grid grid-cols-2 sm:grid-cols-12 gap-x-4 gap-y-3 sm:gap-4 items-center py-6"
                      data-item-id="{{ $id }}"
                      data-precio="{{ $detalles['precio'] }}">
 
                     <a href="{{ route('producto.show', $detalles['id_producto'] ?? '') }}"
-                       class="col-span-7 flex items-center gap-4 min-w-0">
+                       class="col-span-2 sm:col-span-7 flex items-center gap-4 min-w-0">
                         <div class="relative shrink-0">
                             @if(!empty($detalles['imagen']))
                                 <img src="{{ url('/api/imagen/' . $detalles['imagen']) }}"
@@ -73,11 +73,11 @@
                         </div>
                     </a>
 
-                    <div class="col-span-2 text-center">
+                    <div class="col-span-1 sm:col-span-2 text-left sm:text-center">
                         <span class="sm:hidden text-xs text-gray-400 mr-1">Precio:</span>
 
                         @if(!empty($detalles['precio_oferta']))
-                            <div class="flex flex-col items-center leading-tight">
+                            <div class="inline-flex sm:flex flex-col items-start sm:items-center leading-tight align-top">
                                 <span class="text-xs text-gray-700 line-through">
                                     S/ {{ number_format($detalles['precio_normal'], 2) }}
                                 </span>
@@ -92,9 +92,7 @@
                         @endif
                     </div>
 
-                    <div class="col-span-1 flex flex-col items-center gap-1">
-                        <span class="sm:hidden text-xs text-gray-400 mb-1">Cantidad:</span>
-
+                    <div class="col-span-1 sm:col-span-1 flex flex-col items-end sm:items-center gap-1">
                         <div class="selector-cantidad flex items-center border border-gray-200 rounded-lg overflow-hidden transition-opacity">
                             <button type="button"
                                     onclick="cambiarCantidad('{{ $id }}', -1, this)"
@@ -116,7 +114,7 @@
                         </div>
                     </div>
 
-                    <div class="col-span-2 text-center">
+                    <div class="col-span-2 sm:col-span-2 text-right sm:text-center">
                         <span class="sm:hidden text-xs text-gray-400 mr-1">Subtotal:</span>
                         <span class="text-sm text-gray-800 subtotal-display">
                             S/ {{ number_format($detalles['precio'] * $detalles['cantidad'], 2) }}
@@ -131,8 +129,8 @@
 
         <div class="lg:col-span-4">
             <div class="lg:sticky lg:top-24 pt-4 lg:pt-16">
-                
-                <div class="p-7 bg-transparent">
+
+                <div class="p-0 sm:p-7 bg-transparent">
                     <div class="flex justify-between items-center">
                         <span class="font-semibold text-gray-800 text-sm">Total</span>
                         <span class="font-semibold text-gray-800 text-sm total-global">
@@ -141,7 +139,7 @@
                     </div>
 
                     <a href="{{ route('checkout.index') }}"
-                       class="hidden lg:flex mt-7 items-center justify-center w-full bg-gray-900 text-white rounded-full py-4 text-[14px] font-semibold transition-all uppercase">
+                       class="flex mt-7 items-center justify-center w-full bg-gray-900 text-white rounded-full py-4 text-[14px] font-semibold transition-all uppercase">
                         Ir a pagar
                     </a>
                 </div>
@@ -224,7 +222,6 @@
             recalcularTotalGlobal();
 
         } catch (error) {
-            console.error('Error al cambiar cantidad:', error);
         } finally {
             restaurarSelector(fila, nuevaCantidad, stock);
         }
@@ -264,7 +261,6 @@
             }, 200);
 
         } catch (error) {
-            console.error('Error al eliminar producto:', error);
             fila.style.opacity = '1';
             if (selectorEl) {
                 selectorEl.style.opacity = '1';

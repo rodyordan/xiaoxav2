@@ -5,14 +5,14 @@
 @section('content')
 
 <div class="max-w-7xl mx-auto px-4 sm:px-8 pt-6 pb-2">
-    <div class="flex items-center justify-center gap-2 flex-wrap">
+    <div class="flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
         <a href="{{ route('carrito.index') }}" class="flex items-center gap-1">
-            <span class="text-[20px] font-normal text-gray-800">Mi bolsa</span>
+            <span class="text-sm sm:text-[20px] font-normal text-gray-800">Mi bolsa</span>
         </a>
-        <x-heroicon-o-chevron-right class="w-5 h-5 text-gray-400" />
-        <span class="text-[20px] font-bold text-gray-800">Datos de compra</span>
-        <x-heroicon-o-chevron-right class="w-5 h-5 text-gray-400" />
-        <span class="text-[20px] font-normal text-gray-800">Compra finalizada</span>
+        <x-heroicon-o-chevron-right class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" />
+        <span class="text-sm sm:text-[20px] font-bold text-gray-800">Datos de compra</span>
+        <x-heroicon-o-chevron-right class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" />
+        <span class="text-sm sm:text-[20px] font-normal text-gray-800">Compra finalizada</span>
     </div>
 </div>
 
@@ -141,7 +141,7 @@
         <div>
             <h2 class="text-base font-normal text-gray-700 mb-5">Datos de entrega</h2>
 
-            <div class="flex items-center gap-8 mb-6 text-sm text-gray-700">
+            <div class="flex flex-wrap items-center gap-x-8 gap-y-3 mb-6 text-sm text-gray-700">
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="radio" name="tipo_entrega" value="2"
                         x-model.number="tipoEntrega"
@@ -241,17 +241,10 @@
             </div>
         </div>
 
-        <div class="lg:hidden">
-            <button @click="intentarPagar"
-                class="w-full bg-gray-900 text-white rounded-full py-4 text-sm font-semibold tracking-wide transition-all">
-                <span>Ir a pagar</span>
-            </button>
-        </div>
-
     </div>
 
     <div class="lg:col-span-4">
-        <div class="bg-[#f1f1f1] rounded-2xl p-7 lg:sticky lg:top-24">
+        <div class="bg-[#f1f1f1] rounded-2xl p-6 sm:p-7 lg:sticky lg:top-24">
 
             <h2 class="font-bold text-lg mb-6 text-gray-900">Resumen del pedido</h2>
 
@@ -276,14 +269,14 @@
             </div>
 
             <button @click="intentarPagar"
-                class="hidden lg:flex mt-7 items-center justify-center w-full bg-gray-900 text-white rounded-full py-4 text-[14px] font-semibold transition-all uppercase">
+                class="flex mt-7 items-center justify-center w-full bg-gray-900 text-white rounded-full py-4 text-[14px] font-semibold transition-all uppercase">
                 <span>Ir a pagar</span>
             </button>
 
         </div>
     </div>
 
-    <form id="form-pedido" method="POST" action="{{ route('checkout.confirmar') }}">
+    <form id="form-pedido" method="POST" action="{{ route('checkout.confirmar') }}" class="hidden">
         @csrf
         <input type="hidden" name="id_tipo_entrega"    x-bind:value="tipoEntrega">
         <input type="hidden" name="departamento"       x-bind:value="departamento">
@@ -307,7 +300,7 @@
             provincia:           '',
             distrito:            '',
             totalProductos:      totalProductos,
-            
+
             errores: {},
 
             idTipoDocumento:      '{{ auth()->user()->id_tipo_documento ?? '' }}',
@@ -322,7 +315,7 @@
                 if (!this.idTipoDocumento) {
                     this.errores.idTipoDocumento = 'Selecciona un tipo de documento.';
                 }
-                
+
                 const doc = this.numeroDocumento.trim();
                 if (!doc) {
                     this.errores.numeroDocumento = 'El número de documento es obligatorio.';
@@ -335,7 +328,7 @@
                 } else if (doc.length !== parseInt(this.longDocRequerida)) {
                     this.errores.numeroDocumento = `El documento debe tener ${this.longDocRequerida} dígitos.`;
                 }
-                
+
                 const tel = this.telefono.trim();
                 if (!tel) {
                     this.errores.telefono = 'El teléfono es obligatorio.';
@@ -344,7 +337,7 @@
                 } else if (tel.length !== 9) {
                     this.errores.telefono = 'El teléfono debe tener 9 dígitos.';
                 }
-                
+
                 if (this.tipoEntrega == 2) {
                     if (!this.departamento.trim()) {
                         this.errores.departamento = 'El departamento es obligatorio.';
