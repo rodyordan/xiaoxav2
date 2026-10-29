@@ -62,7 +62,6 @@
                     this.variantes.forEach((variante, index) => {
                         const vErr = {};
 
-                        if (!variante.sku || !variante.sku.trim()) vErr.sku = true;
                         if (!variante.talla || !variante.talla.trim()) vErr.talla = true;
                         if (!variante.color || !variante.color.trim()) vErr.color = true;
 

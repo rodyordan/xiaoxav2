@@ -247,7 +247,7 @@ class ProductoController extends Controller
 
         foreach ($request->variantes as $index => $v) {
             $rules["variantes.{$index}.sku"] = [
-                'required',
+                'nullable',
                 'string',
                 'max:50',
                 'distinct',
@@ -275,7 +275,6 @@ class ProductoController extends Controller
             'variantes.*.stock.required' => 'El stock es obligatorio en cada variante.',
             'variantes.*.stock.integer' => 'El stock debe ser un número entero.',
             'variantes.*.stock.min' => 'El stock no puede ser negativo.',
-            'variantes.*.sku.required' => 'El SKU es obligatorio en cada variante.',
             'variantes.*.sku.distinct' => 'No puedes repetir el mismo SKU en varias variantes.',
             'variantes.*.sku.unique' => 'El SKU ya está en uso.',
             'variantes.*.imagenes.*.image' => 'Cada archivo debe ser una imagen válida.',
@@ -300,6 +299,14 @@ class ProductoController extends Controller
         $idsEnviados = [];
 
         foreach ($request->variantes as $index => $v) {
+            $varianteExistente = !empty($v['id_variante'])
+                ? $producto->variantes->firstWhere('id_variante', $v['id_variante'])
+                : null;
+
+            $sku = $v['sku']
+                ?? $varianteExistente?->sku
+                ?? $this->generarSku($producto->nombre_producto, $v['talla']);
+
             $variante = $producto->variantes()->updateOrCreate(
                 ['id_variante' => $v['id_variante'] ?? null],
                 [
@@ -307,7 +314,7 @@ class ProductoController extends Controller
                     'color' => $v['color'] ?? null,
                     'color_hex' => $v['color_hex'] ?? null,
                     'stock' => $v['stock'],
-                    'sku'   => $v['sku'],
+                    'sku'   => $sku,
                 ]
             );
             $idsEnviados[] = $variante->id_variante;
