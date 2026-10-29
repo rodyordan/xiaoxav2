@@ -180,20 +180,26 @@ class MobileAuthController extends Controller
         $user = $request->user();
 
         $request->merge([
-            'numero_documento' => trim((string) $request->numero_documento),
-            'telefono' => trim((string) $request->telefono),
+            'numero_documento' => $request->filled('numero_documento') ? trim((string) $request->numero_documento) : null,
+            'telefono' => $request->filled('telefono') ? trim((string) $request->telefono) : null,
         ]);
 
         $request->validate([
             'id_tipo_documento' => 'required|integer|exists:tipo_documento,id_tipo_documento',
-            'numero_documento' => 'required|string|max:20',
-            'telefono' => 'required|string|max:20',
+            'numero_documento' => 'required|numeric|digits_between:8,12',
+            'telefono' => 'nullable|numeric|digits:9',
+        ], [
+            'numero_documento.required' => 'El número de documento es obligatorio.',
+            'numero_documento.numeric' => 'El documento debe contener solo números.',
+            'numero_documento.digits_between' => 'El documento debe tener entre 8 y 12 dígitos.',
+            'telefono.numeric' => 'El teléfono debe contener solo números.',
+            'telefono.digits' => 'El teléfono debe tener 9 dígitos.',
         ]);
 
         $user->update([
             'id_tipo_documento' => $request->id_tipo_documento,
             'numero_documento' => $request->numero_documento,
-            'telefono' => $request->telefono,
+            'telefono' => $request->telefono ?? $user->telefono,
         ]);
 
         return response()->json([
