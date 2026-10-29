@@ -26,18 +26,20 @@ class RegisteredUserController extends Controller
         ]);
 
         $request->validate([
-            'nombres'   => ['required', 'string', 'max:50'],
-            'apellidos' => ['required', 'string', 'max:50'],
+            'nombres'   => ['required', 'string', 'max:50', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/'],
+            'apellidos' => ['required', 'string', 'max:50', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/'],
             'correo'    => ['required', 'string', 'lowercase', 'email', 'max:100', 'unique:usuario,correo'],
             'password'  => ['required', 'confirmed', Rules\Password::min(8)->letters()->numbers()->max(72)],
         ], [
             'nombres.required'    => 'Los nombres son obligatorios.',
             'nombres.string'      => 'Los nombres deben ser texto válido.',
             'nombres.max'         => 'Los nombres no pueden tener más de 50 caracteres.',
+            'nombres.regex'       => 'Los nombres solo pueden contener letras y espacios.', // <-- NUEVO
 
             'apellidos.required'  => 'Los apellidos son obligatorios.',
             'apellidos.string'    => 'Los apellidos deben ser texto válido.',
             'apellidos.max'       => 'Los apellidos no pueden tener más de 50 caracteres.',
+            'apellidos.regex'     => 'Los apellidos solo pueden contener letras y espacios.', // <-- NUEVO
 
             'correo.required'     => 'El correo electrónico es obligatorio.',
             'correo.email'        => 'Ingresa un correo electrónico válido.',

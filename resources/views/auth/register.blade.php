@@ -82,9 +82,10 @@
                         name="nombres"
                         id="nombres"
                         x-model="nombres"
-                        @input="if (errores.nombres) delete errores.nombres"
+                        @input="if (errores.nombres) delete errores.nombres; nombres = nombres.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')"
                         value="{{ old('nombres') }}"
                         placeholder="Ingresar nombres"
+                        maxlength="50"
                         class="w-full border rounded-lg px-4 py-2.5 text-sm text-black placeholder-gray-400 focus:outline-none transition"
                         :class="errores.nombres ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'"
                         autofocus
@@ -105,9 +106,10 @@
                         name="apellidos"
                         id="apellidos"
                         x-model="apellidos"
-                        @input="if (errores.apellidos) delete errores.apellidos"
+                        @input="if (errores.apellidos) delete errores.apellidos; apellidos = apellidos.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')"
                         value="{{ old('apellidos') }}"
                         placeholder="Ingresar apellidos"
+                        maxlength="50"
                         class="w-full border rounded-lg px-4 py-2.5 text-sm text-black placeholder-gray-400 focus:outline-none transition"
                         :class="errores.apellidos ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'"
                     >
@@ -130,6 +132,7 @@
                         @input="if (errores.correo) delete errores.correo"
                         value="{{ old('correo') }}"
                         placeholder="Ingresar correo electrónico"
+                        maxlength="100"
                         class="w-full border rounded-lg px-4 py-2.5 text-sm text-black placeholder-gray-400 focus:outline-none transition"
                         :class="errores.correo ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'"
                     >
@@ -152,6 +155,7 @@
                             x-model="password"
                             @input="if (errores.password) delete errores.password"
                             placeholder="Ingresar contraseña"
+                            maxlength="72"
                             class="w-full border rounded-lg px-4 py-2.5 pr-10 text-sm text-black placeholder-gray-400 focus:outline-none transition"
                             :class="errores.password ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'"
                         >
@@ -184,6 +188,7 @@
                             x-model="password_confirmation"
                             @input="if (errores.password_confirmation) delete errores.password_confirmation"
                             placeholder="Ingresar contraseña nuevamente"
+                            maxlength="72"
                             class="w-full border rounded-lg px-4 py-2.5 pr-10 text-sm text-black placeholder-gray-400 focus:outline-none transition"
                             :class="errores.password_confirmation ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'"
                         >
