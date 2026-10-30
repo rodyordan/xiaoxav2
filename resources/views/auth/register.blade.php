@@ -37,12 +37,18 @@
                 validar(e) {
                     this.errores = {};
 
-                    if (!this.nombres.trim()) {
+                    const nombresTrim = this.nombres.trim().replace(/\s+/g, ' ');
+                    if (!nombresTrim) {
                         this.errores.nombres = 'Los nombres son obligatorios.';
+                    } else if (nombresTrim.length > 50) {
+                        this.errores.nombres = 'Los nombres no pueden tener más de 50 caracteres.';
                     }
 
-                    if (!this.apellidos.trim()) {
+                    const apellidosTrim = this.apellidos.trim().replace(/\s+/g, ' ');
+                    if (!apellidosTrim) {
                         this.errores.apellidos = 'Los apellidos son obligatorios.';
+                    } else if (apellidosTrim.length > 50) {
+                        this.errores.apellidos = 'Los apellidos no pueden tener más de 50 caracteres.';
                     }
 
                     const correoTrim = this.correo.trim();
@@ -78,6 +84,9 @@
                         return;
                     }
 
+                    this.nombres = nombresTrim;
+                    this.apellidos = apellidosTrim;
+
                     e.target.submit();
                 }
              }">
@@ -97,6 +106,7 @@
                         id="nombres"
                         x-model="nombres"
                         @input="if (errores.nombres) delete errores.nombres; nombres = nombres.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')"
+                        @blur="nombres = nombres.trim().replace(/\s+/g, ' ')"
                         value="{{ old('nombres') }}"
                         placeholder="Ingresar nombres"
                         maxlength="50"
@@ -121,6 +131,7 @@
                         id="apellidos"
                         x-model="apellidos"
                         @input="if (errores.apellidos) delete errores.apellidos; apellidos = apellidos.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')"
+                        @blur="apellidos = apellidos.trim().replace(/\s+/g, ' ')"
                         value="{{ old('apellidos') }}"
                         placeholder="Ingresar apellidos"
                         maxlength="50"
@@ -144,6 +155,7 @@
                         id="correo"
                         x-model="correo"
                         @input="if (errores.correo) delete errores.correo"
+                        @blur="correo = correo.trim()"
                         value="{{ old('correo') }}"
                         placeholder="Ingresar correo electrónico"
                         maxlength="100"
