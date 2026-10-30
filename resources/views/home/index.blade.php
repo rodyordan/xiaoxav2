@@ -4,12 +4,9 @@
 
 @section('content')
 
-{{-- ===== CARRUSEL (SOLO EN HOME SIN FILTROS) ===== --}}
 @if(!request('categoria') && !request('promocion') && !request('buscar') && !request('nuevo'))
     @if(isset($banners) && $banners->count() > 0)
     @php
-        // Si hay más de un banner se agrega una copia del primero al final
-        // para que el carrusel pueda avanzar siempre hacia la derecha sin saltos.
         $slides = $banners->count() > 1 ? $banners->concat([$banners->first()]) : $banners;
     @endphp
     <section class="w-full bg-white">
@@ -22,22 +19,15 @@
                 inicioX: 0,
 
                 init() { this.iniciarAutoplay(); },
-
                 actual() { return this.pos % this.total; },
-
                 iniciarAutoplay() {
                     this.detenerAutoplay();
                     if (this.total < 2) return;
                     this.timer = setInterval(() => this.siguiente(), 5000);
                 },
-
                 detenerAutoplay() {
-                    if (this.timer) {
-                        clearInterval(this.timer);
-                        this.timer = null;
-                    }
+                    if (this.timer) { clearInterval(this.timer); this.timer = null; }
                 },
-
                 siguiente() {
                     if (this.total < 2 || this.pos >= this.total) return;
                     this.pos++;
@@ -45,28 +35,22 @@
                         setTimeout(() => this.saltarAlInicio(), 750);
                     }
                 },
-
                 anterior() {
                     if (this.total < 2) return;
                     if (this.pos === 0) {
                         this.animar = false;
                         this.pos = this.total;
-                        setTimeout(() => {
-                            this.animar = true;
-                            this.pos = this.total - 1;
-                        }, 50);
+                        setTimeout(() => { this.animar = true; this.pos = this.total - 1; }, 50);
                     } else {
                         this.pos--;
                     }
                 },
-
                 saltarAlInicio() {
                     if (this.pos !== this.total) return;
                     this.animar = false;
                     this.pos = 0;
                     setTimeout(() => { this.animar = true; }, 50);
                 },
-
                 irA(i) {
                     if (this.pos === this.total && i === 0) {
                         this.saltarAlInicio();
@@ -75,7 +59,6 @@
                     }
                     this.iniciarAutoplay();
                 },
-
                 terminarToque(e) {
                     const dx = e.changedTouches[0].clientX - this.inicioX;
                     if (Math.abs(dx) > 50) {
@@ -87,8 +70,8 @@
             class="relative w-full"
         >
             <div
-                class="relative w-full"
-                style="height: 750px; overflow: hidden; touch-action: pan-y;"
+                class="relative w-full h-[300px] md:h-[500px] lg:h-[750px]"
+                style="overflow: hidden; touch-action: pan-y;"
                 @touchstart.passive="inicioX = $event.touches[0].clientX; detenerAutoplay()"
                 @touchend="terminarToque($event)"
             >
@@ -142,15 +125,13 @@
     </section>
     @else
     <section class="w-full bg-white">
-        <div class="relative w-full" style="height: 750px; overflow: hidden;">
+        <div class="relative w-full h-[300px] md:h-[500px] lg:h-[750px]" style="overflow: hidden;">
             <img src="{{ asset('images/banner-home.jpg') }}" alt="Banner" class="w-full h-full object-cover object-center">
         </div>
     </section>
     @endif
 @endif
 
-
-{{-- ===== SECCIONES POR CATEGORÍA (SOLO CUANDO NO HAY FILTROS) ===== --}}
 @if(isset($categorias) && $categorias->count() > 0)
 
     @foreach($categorias as $categoria)
@@ -220,20 +201,15 @@
 
 @endif
 
-
-{{-- ===== GRID ÚNICO (CUANDO HAY FILTROS O BÚSQUEDA) ===== --}}
 @if(isset($productos) && $productos->count() > 0)
 
-{{-- ===== TÍTULO / BREADCRUMB ===== --}}
 @if(request('buscar'))
-    {{-- Búsqueda: título grande pegado al borde --}}
     <div class="w-full px-6 sm:px-16 pt-6 pb-2">
         <h1 class="text-xl font-normal text-black" style="text-align: left !important; margin: 0;">
             Resultados para <span class="font-semibold">{{ request('buscar') }}</span>
         </h1>
     </div>
 @else
-    {{-- Categoría / Promociones / Lo nuevo: breadcrumb --}}
     <div class="max-w-7xl mx-auto px-4 sm:px-8 pt-6 pb-2">
         <div class="flex items-center gap-2 flex-wrap">
             <a href="{{ route('home') }}" class="flex items-center gap-1" title="Volver al inicio">
@@ -311,10 +287,8 @@
 
 </div>
 
-{{-- SIN RESULTADOS --}}
 @elseif(isset($productos) && $productos->isEmpty() && (request('buscar') || request('categoria') || request('promocion') || request('nuevo')))
 
-{{-- ===== TÍTULO / BREADCRUMB ===== --}}
 @if(request('buscar'))
     <div class="w-full px-6 sm:px-16 pt-6 pb-2">
         <h1 class="text-xl font-normal text-black" style="text-align: left !important; margin: 0;">
