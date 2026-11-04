@@ -43,10 +43,8 @@ class CarritoController extends Controller
         return round((1 - ($producto->precio_oferta / $producto->precio)) * 100);
     }
 
-    // AGREGAR
     public function add(Request $request, $id)
     {
-        // 🚫 Sin sesión → redirige a login
         if (!Auth::check()) {
             return redirect()->route('login');
         }
@@ -56,11 +54,10 @@ class CarritoController extends Controller
 
         $variante = ProductoVariante::with(['producto', 'imagenes'])->findOrFail($id_variante);
 
-        if ($variante->stock < $cantidad) {
-            return redirect()->back()->with('error', 'Stock no disponible');
+        if ($variante->stock <= 0) {
+            return redirect()->route('carrito.index');
         }
 
-        // 👤 Usuario logueado → BD
         $carrito = Carrito::firstOrCreate([
             'id_usuario' => Auth::id()
         ]);
@@ -69,24 +66,27 @@ class CarritoController extends Controller
             ->where('id_variante', $id_variante)
             ->first();
 
+        $yaEnCarrito = $detalle ? $detalle->cantidad : 0;
+        $nuevaCantidad = min($yaEnCarrito + $cantidad, $variante->stock);
+
+        if ($nuevaCantidad <= $yaEnCarrito && $detalle) {
+            return redirect()->route('carrito.index');
+        }
+
         if ($detalle) {
-            if ($detalle->cantidad + $cantidad > $variante->stock) {
-                return redirect()->back()->with('error', 'Stock no disponible');
-            }
-            $detalle->cantidad += $cantidad;
+            $detalle->cantidad = $nuevaCantidad;
             $detalle->save();
         } else {
             DetalleCarrito::create([
                 'id_carrito'  => $carrito->id_carrito,
                 'id_variante' => $id_variante,
-                'cantidad'    => $cantidad
+                'cantidad'    => $nuevaCantidad
             ]);
         }
 
         return redirect()->route('carrito.index');
     }
 
-    // MOSTRAR
     public function index()
     {
         if (!Auth::check()) {
@@ -128,7 +128,6 @@ class CarritoController extends Controller
         return view('carrito.index', compact('items', 'total'));
     }
 
-    // AUMENTAR
     public function aumentar($id_variante)
     {
         if (!Auth::check()) {
@@ -152,7 +151,6 @@ class CarritoController extends Controller
         return redirect()->route('carrito.index');
     }
 
-    // DISMINUIR (si llega a 0, elimina el producto)
     public function disminuir($id_variante)
     {
         if (!Auth::check()) {
@@ -179,7 +177,6 @@ class CarritoController extends Controller
         return redirect()->route('carrito.index');
     }
 
-    // ELIMINAR
     public function eliminar($id_variante)
     {
         if (!Auth::check()) {

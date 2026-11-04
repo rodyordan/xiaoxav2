@@ -19,8 +19,6 @@ use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CuponController;
 use App\Http\Controllers\Api\ImageController;
 
-// ── PÚBLICAS
-
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/api/imagen/{filename}', [ImageController::class, 'show'])
@@ -30,10 +28,20 @@ Route::get('/api/imagen/{filename}', [ImageController::class, 'show'])
 Route::get('/producto/{id}', function ($id) {
     $producto = Producto::with(['variantes.imagenes', 'categoria'])
         ->findOrFail($id);
-    return view('producto.detalle', compact('producto'));
+
+    $enCarrito = [];
+    if (Auth::check()) {
+        $carrito = \App\Models\Carrito::where('id_usuario', Auth::id())->first();
+        if ($carrito) {
+            $enCarrito = \App\Models\DetalleCarrito::where('id_carrito', $carrito->id_carrito)
+                ->pluck('cantidad', 'id_variante')
+                ->toArray();
+        }
+    }
+
+    return view('producto.detalle', compact('producto', 'enCarrito'));
 })->name('producto.show');
 
-// ── CARRITO (requiere sesión)
 Route::middleware('auth')->group(function () {
     Route::get('/carrito',                   [CarritoController::class, 'index'])->name('carrito.index');
     Route::post('/carrito/add/{id}',         [CarritoController::class, 'add'])->name('carrito.add');
@@ -42,10 +50,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/carrito/eliminar/{id}',     [CarritoController::class, 'eliminar'])->name('carrito.eliminar');
 });
 
-// ── WEBHOOK MERCADO PAGO
 Route::post('/pago/webhook', [PagoController::class, 'webhook'])->name('pago.webhook');
 
-// ── LOGOUT Y REDIRECT
 Route::get('/logout-redirect', function () {
     Auth::guard('web')->logout();
     request()->session()->invalidate();
@@ -54,7 +60,6 @@ Route::get('/logout-redirect', function () {
     return redirect()->route('login');
 })->name('logout.redirect');
 
-// ── AUTENTICADOS Y VERIFICADOS
 Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/finalizar-compra',            [CheckoutController::class, 'index'])->name('checkout.index');
@@ -62,7 +67,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::put('/usuario/actualizar', [UsuarioController::class, 'actualizar'])->name('usuario.actualizar');
 
-    // ── PERFIL
     Route::prefix('perfil')->name('perfil.')->group(function () {
         Route::get('/',          [PerfilController::class, 'index'])->name('index');
         Route::get('/editar',    [PerfilController::class, 'edit'])->name('edit');
@@ -80,7 +84,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/pago/pendiente', [PagoController::class, 'pendiente'])->name('pago.pendiente');
 });
 
-// ── ADMINISTRADOR
 Route::middleware(['auth', 'verified', 'role:1'])
     ->prefix('admin')
     ->name('admin.')

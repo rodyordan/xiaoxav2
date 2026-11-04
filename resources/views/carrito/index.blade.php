@@ -26,8 +26,8 @@
 
             <div class="hidden sm:grid grid-cols-12 gap-4 pb-4 mb-2 border-b border-gray-200 text-sm text-gray-800">
                 <div class="col-span-7">Producto</div>
-                <div class="col-span-2 text-center">Precio</div>
-                <div class="col-span-1 text-center">Cantidad</div>
+                <div class="col-span-2 text-center flex justify-center">Precio</div>
+                <div class="col-span-1 text-center flex justify-center">Cantidad</div>
                 <div class="col-span-2 text-center">Subtotal</div>
             </div>
 
@@ -77,7 +77,7 @@
                         <span class="sm:hidden text-xs text-gray-400 mr-1">Precio:</span>
 
                         @if(!empty($detalles['precio_oferta']))
-                            <div class="inline-flex sm:flex flex-col items-start sm:items-center leading-tight align-top">
+                            <div class="inline-flex flex-col items-start sm:items-center leading-tight align-top">
                                 <span class="text-xs text-gray-700 line-through">
                                     S/ {{ number_format($detalles['precio_normal'], 2) }}
                                 </span>
@@ -93,7 +93,7 @@
                     </div>
 
                     <div class="col-span-1 sm:col-span-1 flex flex-col items-end sm:items-center gap-1">
-                        <div class="selector-cantidad flex items-center border border-gray-200 rounded-lg overflow-hidden transition-opacity">
+                        <div class="selector-cantidad flex items-center border-2 border-gray-400 rounded-lg overflow-hidden transition-opacity">
                             <button type="button"
                                     onclick="cambiarCantidad('{{ $id }}', -1, this)"
                                     class="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition">
@@ -107,8 +107,9 @@
                             <button type="button"
                                     onclick="cambiarCantidad('{{ $id }}', 1, this)"
                                     data-stock="{{ $detalles['stock'] ?? 0 }}"
-                                    class="btn-aumentar w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition
-                                           {{ ($detalles['cantidad'] ?? 0) >= ($detalles['stock'] ?? 0) ? 'pointer-events-none opacity-40' : '' }}">
+                                    class="btn-aumentar w-8 h-8 flex items-center justify-center text-gray-600 transition
+                                           {{ ($detalles['cantidad'] ?? 0) >= ($detalles['stock'] ?? 0) ? 'cursor-not-allowed' : 'hover:bg-gray-100' }}"
+                                    {{ ($detalles['cantidad'] ?? 0) >= ($detalles['stock'] ?? 0) ? 'disabled' : '' }}>
                                 <x-heroicon-o-plus class="w-3.5 h-3.5" />
                             </button>
                         </div>
@@ -119,6 +120,15 @@
                         <span class="text-sm text-gray-800 subtotal-display">
                             S/ {{ number_format($detalles['precio'] * $detalles['cantidad'], 2) }}
                         </span>
+                    </div>
+
+                    {{-- Fila completa extra para el botón Eliminar abajo a la derecha --}}
+                    <div class="col-span-2 sm:col-span-12 flex justify-end mt-1 sm:mt-0">
+                        <button type="button" 
+                                onclick="eliminarProducto('{{ $id }}', this.closest('[data-item-id]'))"
+                                class="text-xs text-red-500 hover:text-red-700 font-medium transition-colors">
+                            Eliminar
+                        </button>
                     </div>
 
                 </div>
@@ -229,9 +239,14 @@
 
     async function eliminarProducto(idVariante, fila) {
         const selectorEl = fila.querySelector('.selector-cantidad');
+        const btnEliminar = fila.querySelector('button[onclick*="eliminarProducto"]');
+        
         if (selectorEl) {
             selectorEl.style.opacity = '0.4';
             selectorEl.style.pointerEvents = 'none';
+        }
+        if (btnEliminar) {
+            btnEliminar.style.pointerEvents = 'none';
         }
 
         try {
@@ -266,6 +281,9 @@
                 selectorEl.style.opacity = '1';
                 selectorEl.style.pointerEvents = 'auto';
             }
+            if (btnEliminar) {
+                btnEliminar.style.pointerEvents = 'auto';
+            }
         }
     }
 
@@ -280,9 +298,13 @@
 
         if (btnAumentar) {
             if (cantidad >= stock) {
-                btnAumentar.classList.add('pointer-events-none', 'opacity-40');
+                btnAumentar.classList.add('cursor-not-allowed');
+                btnAumentar.classList.remove('hover:bg-gray-100');
+                btnAumentar.disabled = true;
             } else {
-                btnAumentar.classList.remove('pointer-events-none', 'opacity-40');
+                btnAumentar.classList.remove('cursor-not-allowed');
+                btnAumentar.classList.add('hover:bg-gray-100');
+                btnAumentar.disabled = false;
             }
         }
     }

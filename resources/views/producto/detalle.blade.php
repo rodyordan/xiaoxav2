@@ -36,7 +36,6 @@
     };
 @endphp
 
-{{-- ===== BREADCRUMB ===== --}}
 <div class="max-w-7xl mx-auto px-4 sm:px-8 pt-6 pb-2">
     <div class="flex items-center gap-2 flex-wrap">
         <a href="{{ route('home') }}" class="flex items-center gap-1" title="Volver al inicio">
@@ -62,7 +61,6 @@
 <main class="max-w-7xl mx-auto px-4 sm:px-8 py-8">
     <div class="flex flex-col lg:flex-row items-start">
 
-        {{-- ===== GALERÍA ===== --}}
         <div class="w-full lg:w-[65%] min-w-0">
             <div class="flex min-w-0">
 
@@ -86,7 +84,6 @@
             </div>
         </div>
 
-        {{-- ===== INFO PRODUCTO ===== --}}
         <div class="w-full lg:w-[35%] space-y-0">
 
             <div class="pb-5">
@@ -131,9 +128,8 @@
             </div>
             @endif
 
-            {{-- Selector de Color --}}
             @if(count($coloresUnicos) > 0)
-            <div class="py-5">
+            <div class="py-4">
                 <div class="flex items-baseline gap-2 mb-3">
                     <p class="text-sm font-bold text-gray-900">Color:</p>
                     <span id="color-seleccionado" class="text-sm text-gray-700"></span>
@@ -155,8 +151,7 @@
             </div>
             @endif
 
-            {{-- Selector de Talla --}}
-            <div class="py-5">
+            <div class="py-4">
                 <p class="text-sm font-bold mb-3">Talla:</p>
                 <div class="flex flex-wrap gap-2">
                     @foreach($tallas as $talla)
@@ -168,10 +163,11 @@
                     </button>
                     @endforeach
                 </div>
+                {{-- Mensaje de error idéntico al del checkout, persistente --}}
+                <p id="toast-error" class="text-xs text-red-600 mt-1.5 font-medium opacity-0 transition-opacity duration-300 pointer-events-none"></p>
             </div>
 
-            {{-- Cantidad + Botón --}}
-            <div class="pt-5">
+            <div class="pt-2">
                 <form id="form-carrito" action="{{ route('carrito.add', $producto->id_producto) }}" method="POST">
                     @csrf
                     <input type="hidden" name="color"       id="input-color">
@@ -179,20 +175,16 @@
                     <input type="hidden" name="id_variante" id="input-variante">
                     <input type="hidden" name="cantidad"    id="input-cantidad" value="1">
 
-                    <div id="error-msg" class="hidden bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl px-4 py-3 mb-4 flex items-center gap-2">
-                        <x-heroicon-o-exclamation-circle class="w-4 h-4 shrink-0" />
-                        <span>Debes seleccionar color y talla antes de añadir.</span>
-                    </div>
-
                     <div class="flex items-center gap-3">
-                        <div class="flex items-center border border-gray-200 rounded-lg overflow-hidden">
-                            <button type="button" onclick="disminuirCantidad()"
-                                    class="w-9 h-11 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition">
+                        {{-- Selector de cantidad --}}
+                        <div id="quantity-controls" class="flex items-center border-2 border-gray-400 rounded-lg overflow-hidden opacity-50 cursor-not-allowed transition-all">
+                            <button type="button" id="btn-minus" onclick="disminuirCantidad()" disabled
+                                    class="w-9 h-11 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition disabled:cursor-not-allowed disabled:hover:bg-transparent">
                                 <x-heroicon-o-minus class="w-4 h-4" />
                             </button>
                             <span id="cantidad-display" class="w-8 text-center text-sm font-semibold">1</span>
-                            <button type="button" onclick="aumentarCantidad()"
-                                    class="w-9 h-11 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition">
+                            <button type="button" id="btn-plus" onclick="aumentarCantidad()" disabled
+                                    class="w-9 h-11 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition disabled:cursor-not-allowed disabled:hover:bg-transparent">
                                 <x-heroicon-o-plus class="w-4 h-4" />
                             </button>
                         </div>
@@ -236,24 +228,20 @@
     .thumbnail-btn { transition: all 0.2s ease; }
     .thumbnail-active { border-color: #111 !important; border-width: 2px !important; }
 
-    /* ===== Color-btn ===== */
     .color-btn {
         box-sizing: border-box;
         border: 0;
         transition: box-shadow 0.2s ease;
     }
 
-    /* Color oscuro seleccionado: anillo color 3px + anillo exterior blanco 1.5px */
     .color-btn.color-activo {
         box-shadow: inset 0 0 0 3px var(--color), inset 0 0 0 5px #fff;
     }
 
-    /* Color claro seleccionado: anillo color 3px + anillo exterior gris 1.5px */
     .color-btn.color-activo-negro {
         box-shadow: inset 0 0 0 3px var(--color), inset 0 0 0 5px #aaa;
     }
 
-    /* Colores claros sin seleccionar: borde gris muy sutil */
     .color-btn.color-claro {
         box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
     }
@@ -282,6 +270,7 @@
         color: #000 !important;
         text-decoration: none !important;
         cursor: not-allowed;
+        opacity: 0.5;
     }
 
     .scroll-gallery { overflow-x: hidden; }
@@ -294,6 +283,8 @@
 @push('scripts')
 <script>
     const variantes = @json($producto->variantes);
+    const enCarrito = @json($enCarrito ?? []);
+    const isAuth = {{ Auth::check() ? 'true' : 'false' }};
 
     @php
         $variantesConImagenes = $producto->variantes->map(function ($v) {
@@ -314,7 +305,8 @@
     let colorSeleccionado = "";
     let tallaSeleccionada = "";
     let cantidad = 1;
-    let stockMaximo = 1;
+    let stockMaximo = 0;
+    let stockEnCarrito = 0;
 
     function cambiarImagen(elemento, ruta) {
         document.getElementById('imagen-principal').src = ruta;
@@ -354,6 +346,26 @@
         document.getElementById('input-cantidad').value = cantidad;
     }
 
+    function actualizarControlesCantidad() {
+        const controls = document.getElementById('quantity-controls');
+        const btnMinus = document.getElementById('btn-minus');
+        const btnPlus = document.getElementById('btn-plus');
+
+        if (!tallaSeleccionada || stockMaximo === 0) {
+            controls.classList.add('opacity-50', 'cursor-not-allowed');
+            controls.classList.remove('opacity-100');
+            btnMinus.disabled = true;
+            btnPlus.disabled = true;
+            return;
+        }
+
+        controls.classList.remove('opacity-50', 'cursor-not-allowed');
+        controls.classList.add('opacity-100');
+
+        btnMinus.disabled = (cantidad <= 1);
+        btnPlus.disabled = (cantidad >= stockMaximo);
+    }
+
     function seleccionarColor(elemento, nombre, hex) {
         colorSeleccionado = nombre;
         document.getElementById('color-seleccionado').innerText = nombre;
@@ -371,23 +383,19 @@
 
         mostrarPrimeraImagenDelColor(nombre);
 
-        bloquearTallasPorColor();
-        reiniciarCantidad();
-        autoSeleccionarPrimeraTalla();
-        actualizarVarianteYStock();
-    }
-
-    function autoSeleccionarPrimeraTalla() {
         document.querySelectorAll('.talla-btn').forEach(btn => {
             btn.classList.remove('talla-activa');
         });
+        tallaSeleccionada = "";
+        document.getElementById('input-talla').value = "";
+        reiniciarCantidad();
 
-        const primeraTallaOk = document.querySelector('.talla-btn:not([disabled])');
-        if (primeraTallaOk) {
-            tallaSeleccionada = primeraTallaOk.dataset.talla;
-            document.getElementById('input-talla').value = tallaSeleccionada;
-            primeraTallaOk.classList.add('talla-activa');
-        }
+        // Limpiamos el mensaje de error al cambiar de color
+        document.getElementById('toast-error').classList.remove('opacity-100');
+        document.getElementById('toast-error').classList.add('opacity-0');
+
+        bloquearTallasPorColor();
+        actualizarVarianteYStock();
     }
 
     function selectTalla(elemento) {
@@ -400,12 +408,21 @@
         });
         elemento.classList.add('talla-activa');
 
+        // Ocultamos el mensaje de error al seleccionar una talla
+        const toast = document.getElementById('toast-error');
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0');
+
         reiniciarCantidad();
         actualizarVarianteYStock();
     }
 
     function actualizarVarianteYStock() {
-        if (!colorSeleccionado || !tallaSeleccionada) return;
+        if (!colorSeleccionado || !tallaSeleccionada) {
+            stockMaximo = 0;
+            actualizarControlesCantidad();
+            return;
+        }
 
         const variante = variantes.find(v =>
             v.color && v.talla &&
@@ -413,33 +430,44 @@
             v.talla.trim().toLowerCase() === tallaSeleccionada.trim().toLowerCase()
         );
 
-        if (variante) {
-            document.getElementById('input-variante').value = variante.id_variante;
-            stockMaximo = parseInt(variante.stock) || 0;
-
-            if (stockMaximo === 0 && cantidad < 1) {
-                cantidad = 1;
-                document.getElementById('cantidad-display').innerText = cantidad;
-                document.getElementById('input-cantidad').value = cantidad;
-            }
+        if (!variante) {
+            stockMaximo = 0;
+            actualizarControlesCantidad();
+            return;
         }
+
+        document.getElementById('input-variante').value = variante.id_variante;
+        
+        stockEnCarrito = parseInt(enCarrito[variante.id_variante] || 0);
+        const totalStock = parseInt(variante.stock) || 0;
+        stockMaximo = Math.max(totalStock - stockEnCarrito, 0);
+
+        actualizarControlesCantidad();
     }
 
     function bloquearTallasPorColor() {
         document.querySelectorAll('.talla-btn').forEach(btn => {
             const talla = btn.dataset.talla;
-            const disponible = variantes.find(v =>
+            const variante = variantes.find(v =>
                 v.color && v.talla &&
                 v.color.trim().toLowerCase() === colorSeleccionado.trim().toLowerCase() &&
-                v.talla.trim().toLowerCase() === talla.trim().toLowerCase() &&
-                v.stock > 0
+                v.talla.trim().toLowerCase() === talla.trim().toLowerCase()
             );
-            if (!disponible) {
+            
+            if (!variante) {
                 btn.disabled = true;
                 btn.classList.add('talla-bloqueada');
             } else {
-                btn.disabled = false;
-                btn.classList.remove('talla-bloqueada');
+                const enCarritoCant = parseInt(enCarrito[variante.id_variante] || 0);
+                const disponible = (parseInt(variante.stock) || 0) - enCarritoCant;
+                
+                if (disponible <= 0) {
+                    btn.disabled = true;
+                    btn.classList.add('talla-bloqueada');
+                } else {
+                    btn.disabled = false;
+                    btn.classList.remove('talla-bloqueada');
+                }
             }
         });
     }
@@ -449,6 +477,7 @@
         cantidad++;
         document.getElementById('cantidad-display').innerText = cantidad;
         document.getElementById('input-cantidad').value = cantidad;
+        actualizarControlesCantidad();
     }
 
     function disminuirCantidad() {
@@ -456,20 +485,28 @@
             cantidad--;
             document.getElementById('cantidad-display').innerText = cantidad;
             document.getElementById('input-cantidad').value = cantidad;
+            actualizarControlesCantidad();
         }
+    }
+
+    function mostrarToast(mensaje) {
+        const toast = document.getElementById('toast-error');
+        toast.textContent = mensaje;
+        toast.classList.remove('opacity-0');
+        toast.classList.add('opacity-100');
     }
 
     document.getElementById('form-carrito').addEventListener('submit', function(e) {
         const color = document.getElementById('input-color').value;
         const talla = document.getElementById('input-talla').value;
-        const errorEl = document.getElementById('error-msg');
-        if (!color || !talla) {
+
+        if (!isAuth) {
+            return; 
+        }
+
+        if (!talla) {
             e.preventDefault();
-            errorEl.classList.remove('hidden');
-            errorEl.classList.add('flex');
-        } else {
-            errorEl.classList.add('hidden');
-            errorEl.classList.remove('flex');
+            mostrarToast('Debes seleccionar una talla antes de añadir.');
         }
     });
 
@@ -494,9 +531,10 @@
 
             bloquearTallasPorColor();
         }
-
-        autoSeleccionarPrimeraTalla();
-        actualizarVarianteYStock();
+        
+        tallaSeleccionada = "";
+        document.getElementById('input-talla').value = "";
+        actualizarControlesCantidad();
     });
 </script>
 @endpush
