@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Producto;
 use App\Models\Categoria;
 use App\Models\Banner;
+use App\Models\Carrito;
+use App\Models\DetalleCarrito;
 use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
@@ -31,17 +33,14 @@ class HomeController extends Controller
             });
         }
 
-        // Filtro por promociones → usa el scope enOferta()
         if ($request->has('promocion')) {
             $query->enOferta();
         }
 
-        // Filtro "Lo nuevo" → 8 últimos productos creados
         if ($request->has('nuevo')) {
             $query->orderBy('created_at', 'desc')->limit(8);
         }
 
-        // Filtro por búsqueda de texto
         if ($request->filled('buscar')) {
             $buscar = trim($request->buscar);
 
@@ -87,5 +86,23 @@ class HomeController extends Controller
             ->get();
 
         return view('home.index', compact('productos', 'categorias', 'banners'));
+    }
+
+    public function show($id)
+    {
+        $producto = Producto::with(['variantes.imagenes', 'categoria'])
+            ->findOrFail($id);
+
+        $enCarrito = [];
+        if (Auth::check()) {
+            $carrito = Carrito::where('id_usuario', Auth::id())->first();
+            if ($carrito) {
+                $enCarrito = DetalleCarrito::where('id_carrito', $carrito->id_carrito)
+                    ->pluck('cantidad', 'id_variante')
+                    ->toArray();
+            }
+        }
+
+        return view('producto.detalle', compact('producto', 'enCarrito'));
     }
 }

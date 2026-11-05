@@ -36,7 +36,7 @@
         }
     }
 
-    $tipoDocumentoTextoInicial = 'Tipo de documento';
+    $tipoDocumentoTextoInicial = 'Seleccionar';
     $longitudDocInicial = '8';
     if (auth()->user()->id_tipo_documento) {
         $td = $tiposDocumento->firstWhere('id_tipo_documento', auth()->user()->id_tipo_documento);
@@ -71,7 +71,7 @@
                         <button type="button" @click="open = !open"
                             class="w-full flex items-center justify-between gap-2 pl-4 pr-4 py-2.5 border rounded-full bg-white text-sm text-gray-700 cursor-pointer focus:outline-none transition-colors"
                             :class="errores.idTipoDocumento ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">
-                            <span x-text="idTipoDocumentoTexto"></span>
+                            <span x-text="idTipoDocumentoTexto" class="truncate"></span>
                             <x-heroicon-o-chevron-down class="w-4 h-4 shrink-0" />
                         </button>
 
@@ -115,7 +115,7 @@
                         @input="numeroDocumento = numeroDocumento.replace(/[^0-9]/g, ''); if(errores.numeroDocumento) delete errores.numeroDocumento"
                         placeholder="Ingresar documento"
                         :disabled="!idTipoDocumento"
-                        class="w-full border rounded-full px-4 py-2.5 text-sm placeholder-gray-400 focus:outline-none transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400"
+                        class="w-full border rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none transition-colors disabled:cursor-not-allowed"
                         :class="errores.numeroDocumento ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">
                     <p x-show="errores.numeroDocumento" x-cloak class="text-xs text-red-600 mt-1.5 font-medium">
                         <span x-text="errores.numeroDocumento"></span>
@@ -145,6 +145,7 @@
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="radio" name="tipo_entrega" value="2"
                         x-model.number="tipoEntrega"
+                        @change="limpiarUbigeo()"
                         class="w-4 h-4 cursor-pointer"
                         style="accent-color: #111827;">
                     <span>Envío a provincia</span>
@@ -153,6 +154,7 @@
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="radio" name="tipo_entrega" value="1"
                         x-model.number="tipoEntrega"
+                        @change="limpiarUbigeo()"
                         class="w-4 h-4 cursor-pointer"
                         style="accent-color: #111827;">
                     <span>Retiro en tienda</span>
@@ -160,15 +162,20 @@
             </div>
 
             <div x-show="tipoEntrega == 2" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-
+                
                 <div>
                     <label class="block text-sm font-normal text-gray-700 mb-2">Departamento</label>
-                    <input type="text"
-                        x-model="departamento"
-                        @input="departamento = departamento.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); if(errores.departamento) delete errores.departamento"
-                        placeholder="Ingresar departamento"
-                        class="w-full border rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none transition-colors"
-                        :class="errores.departamento ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">
+                    <div class="relative">
+                        <select x-model="idDepartamento" @change="cargarProvincias"
+                            class="w-full border rounded-full pl-4 pr-10 py-2.5 text-sm text-gray-700 bg-white focus:outline-none transition-colors appearance-none"
+                            :class="errores.departamento ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">
+                            <option value="" disabled hidden>Seleccionar</option>
+                            @foreach($departamentos as $dep)
+                                <option value="{{ $dep->id_departamento }}">{{ $dep->nombre_departamento }}</option>
+                            @endforeach
+                        </select>
+                        <x-heroicon-o-chevron-down class="w-4 h-4 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
                     <p x-show="errores.departamento" x-cloak class="text-xs text-red-600 mt-1.5 font-medium">
                         <span x-text="errores.departamento"></span>
                     </p>
@@ -176,12 +183,17 @@
 
                 <div>
                     <label class="block text-sm font-normal text-gray-700 mb-2">Provincia</label>
-                    <input type="text"
-                        x-model="provincia"
-                        @input="provincia = provincia.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); if(errores.provincia) delete errores.provincia"
-                        placeholder="Ingresar provincia"
-                        class="w-full border rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none transition-colors"
-                        :class="errores.provincia ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">
+                    <div class="relative">
+                        <select x-model="idProvincia" @change="cargarDistritos" :disabled="!idDepartamento"
+                            class="w-full border rounded-full pl-4 pr-10 py-2.5 text-sm text-gray-700 bg-white focus:outline-none transition-colors appearance-none disabled:cursor-not-allowed"
+                            :class="errores.provincia ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">
+                            <option value="" disabled hidden>Seleccionar</option>
+                            <template x-for="prov in provincias" :key="prov.id_provincia">
+                                <option :value="prov.id_provincia" x-text="prov.nombre_provincia"></option>
+                            </template>
+                        </select>
+                        <x-heroicon-o-chevron-down class="w-4 h-4 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
                     <p x-show="errores.provincia" x-cloak class="text-xs text-red-600 mt-1.5 font-medium">
                         <span x-text="errores.provincia"></span>
                     </p>
@@ -189,12 +201,17 @@
 
                 <div>
                     <label class="block text-sm font-normal text-gray-700 mb-2">Distrito</label>
-                    <input type="text"
-                        x-model="distrito"
-                        @input="distrito = distrito.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); if(errores.distrito) delete errores.distrito"
-                        placeholder="Ingresar distrito"
-                        class="w-full border rounded-full px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 bg-white focus:outline-none transition-colors"
-                        :class="errores.distrito ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">
+                    <div class="relative">
+                        <select x-model="idDistrito" :disabled="!idProvincia"
+                            class="w-full border rounded-full pl-4 pr-10 py-2.5 text-sm text-gray-700 bg-white focus:outline-none transition-colors appearance-none disabled:cursor-not-allowed"
+                            :class="errores.distrito ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'">
+                            <option value="" disabled hidden>Seleccionar</option>
+                            <template x-for="dist in distritos" :key="dist.id_distrito">
+                                <option :value="dist.id_distrito" x-text="dist.nombre_distrito"></option>
+                            </template>
+                        </select>
+                        <x-heroicon-o-chevron-down class="w-4 h-4 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
                     <p x-show="errores.distrito" x-cloak class="text-xs text-red-600 mt-1.5 font-medium">
                         <span x-text="errores.distrito"></span>
                     </p>
@@ -205,7 +222,6 @@
             <div class="mt-6">
 
                 <div x-show="tipoEntrega == 2" class="space-y-4">
-
                     <p class="text-sm text-gray-800">
                         Tu pedido llegará en un plazo de 3 a 5 días hábiles.
                     </p>
@@ -220,11 +236,9 @@
                             </p>
                         </div>
                     </div>
-
                 </div>
 
                 <div x-show="tipoEntrega != 2" class="space-y-4">
-
                     <div class="relative bg-gray-900 rounded-2xl p-4 overflow-hidden">
                         <div class="flex items-start gap-3">
                             <div class="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center shrink-0">
@@ -235,7 +249,6 @@
                             </p>
                         </div>
                     </div>
-
                 </div>
 
             </div>
@@ -279,9 +292,9 @@
     <form id="form-pedido" method="POST" action="{{ route('checkout.confirmar') }}" class="hidden">
         @csrf
         <input type="hidden" name="id_tipo_entrega"    x-bind:value="tipoEntrega">
-        <input type="hidden" name="departamento"       x-bind:value="departamento">
-        <input type="hidden" name="provincia"          x-bind:value="provincia">
-        <input type="hidden" name="distrito"           x-bind:value="distrito">
+        <input type="hidden" name="id_departamento"    x-bind:value="idDepartamento">
+        <input type="hidden" name="id_provincia"       x-bind:value="idProvincia">
+        <input type="hidden" name="id_distrito"        x-bind:value="idDistrito">
         <input type="hidden" name="id_tipo_documento"  x-bind:value="idTipoDocumento">
         <input type="hidden" name="numero_documento"   x-bind:value="numeroDocumento">
         <input type="hidden" name="telefono"           x-bind:value="telefono">
@@ -296,9 +309,11 @@
     function checkoutData(totalProductos) {
         return {
             tipoEntrega:         {{ $tiposEntrega->first()->id_tipo_entrega ?? 1 }},
-            departamento:        '',
-            provincia:           '',
-            distrito:            '',
+            idDepartamento:      '',
+            idProvincia:         '',
+            idDistrito:          '',
+            provincias:          [],
+            distritos:           [],
             totalProductos:      totalProductos,
 
             errores: {},
@@ -308,6 +323,42 @@
             numeroDocumento:      '{{ auth()->user()->numero_documento ?? '' }}',
             telefono:             '{{ auth()->user()->telefono ?? '' }}',
             longDocRequerida:     '{{ $longitudDocInicial }}',
+
+            limpiarUbigeo() {
+                this.idDepartamento = '';
+                this.idProvincia = '';
+                this.idDistrito = '';
+                this.provincias = [];
+                this.distritos = [];
+                
+                if (this.errores.departamento) delete this.errores.departamento;
+                if (this.errores.provincia) delete this.errores.provincia;
+                if (this.errores.distrito) delete this.errores.distrito;
+            },
+
+            async cargarProvincias() {
+                this.idProvincia = '';
+                this.idDistrito = '';
+                this.distritos = [];
+                this.provincias = [];
+                
+                if (this.errores.departamento) delete this.errores.departamento;
+                if (!this.idDepartamento) return;
+
+                const res = await fetch(`/api/provincias/${this.idDepartamento}`);
+                this.provincias = await res.json();
+            },
+
+            async cargarDistritos() {
+                this.idDistrito = '';
+                this.distritos = [];
+                
+                if (this.errores.provincia) delete this.errores.provincia;
+                if (!this.idProvincia) return;
+
+                const res = await fetch(`/api/distritos/${this.idProvincia}`);
+                this.distritos = await res.json();
+            },
 
             intentarPagar() {
                 this.errores = {};
@@ -332,20 +383,20 @@
                 const tel = this.telefono.trim();
                 if (!tel) {
                     this.errores.telefono = 'El teléfono es obligatorio.';
-                } else if (!/^\d+$/.test(tel)) {
-                    this.errores.telefono = 'El teléfono debe contener solo números.';
                 } else if (tel.length !== 9) {
                     this.errores.telefono = 'El teléfono debe tener 9 dígitos.';
+                } else if (tel.charAt(0) !== '9') {
+                    this.errores.telefono = 'El teléfono debe comenzar con 9.';
                 }
 
                 if (this.tipoEntrega == 2) {
-                    if (!this.departamento.trim()) {
+                    if (!this.idDepartamento) {
                         this.errores.departamento = 'El departamento es obligatorio.';
                     }
-                    if (!this.provincia.trim()) {
+                    if (!this.idProvincia) {
                         this.errores.provincia = 'La provincia es obligatoria.';
                     }
-                    if (!this.distrito.trim()) {
+                    if (!this.idDistrito) {
                         this.errores.distrito = 'El distrito es obligatorio.';
                     }
                 }

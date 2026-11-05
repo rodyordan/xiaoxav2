@@ -8,19 +8,41 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Roles
         Schema::create('rol', function (Blueprint $table) {
             $table->id('id_rol');
             $table->string('nombre_rol', 50);
         });
 
-        // Tipo documento
         Schema::create('tipo_documento', function (Blueprint $table) {
             $table->id('id_tipo_documento');
             $table->string('nombre_tipo_documento', 50);
         });
 
-        // Usuario
+        Schema::create('departamento', function (Blueprint $table) {
+            $table->id('id_departamento');
+            $table->string('nombre_departamento', 100);
+        });
+
+        Schema::create('provincia', function (Blueprint $table) {
+            $table->id('id_provincia');
+            $table->string('nombre_provincia', 100);
+            $table->unsignedBigInteger('id_departamento');
+            
+            $table->foreign('id_departamento')
+                  ->references('id_departamento')
+                  ->on('departamento');
+        });
+
+        Schema::create('distrito', function (Blueprint $table) {
+            $table->id('id_distrito');
+            $table->string('nombre_distrito', 100);
+            $table->unsignedBigInteger('id_provincia');
+            
+            $table->foreign('id_provincia')
+                  ->references('id_provincia')
+                  ->on('provincia');
+        });
+
         Schema::create('usuario', function (Blueprint $table) {
             $table->id('id_usuario');
 
@@ -47,7 +69,6 @@ return new class extends Migration
                   ->references('id_rol')->on('rol');
         });
 
-        // Categoria
         Schema::create('categoria', function (Blueprint $table) {
             $table->id('id_categoria');
             $table->string('nombre_categoria', 50);
@@ -55,7 +76,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Producto
         Schema::create('producto', function (Blueprint $table) {
             $table->id('id_producto');
 
@@ -75,7 +95,6 @@ return new class extends Migration
             $table->foreign('id_categoria')->references('id_categoria')->on('categoria');
         });
 
-        // Variantes
         Schema::create('producto_variante', function (Blueprint $table) {
             $table->id('id_variante');
 
@@ -91,7 +110,6 @@ return new class extends Migration
             $table->foreign('id_producto')->references('id_producto')->on('producto');
         });
 
-        // Imágenes de variante
         Schema::create('producto_variante_imagen', function (Blueprint $table) {
             $table->id('id_imagen');
 
@@ -107,7 +125,6 @@ return new class extends Migration
                   ->onDelete('cascade');
         });
 
-        // Cupones
         Schema::create('cupones', function (Blueprint $table) {
             $table->id('id_cupon');
             $table->string('codigo_cupon', 50)->unique();
@@ -117,20 +134,17 @@ return new class extends Migration
             $table->boolean('estado_cupon')->default(1);
         });
 
-        // Tipo entrega
         Schema::create('tipo_entrega', function (Blueprint $table) {
             $table->id('id_tipo_entrega');
             $table->string('nombre_tipo_entrega', 100);
         });
 
-        // Pedido
         Schema::create('pedido', function (Blueprint $table) {
             $table->id('id_pedido');
 
             $table->string('numero_pedido', 20)->unique();
             $table->dateTime('fecha_pedido')->useCurrent();
 
-            // Desglose económico
             $table->decimal('subtotal', 10, 2)->default(0);
             $table->decimal('descuento', 10, 2)->default(0);
             $table->decimal('total_pedido', 10, 2);
@@ -144,21 +158,14 @@ return new class extends Migration
 
             $table->string('payment_id')->nullable();
 
-            // Ubicación del cliente (texto libre, lo llena el cliente)
-            $table->string('departamento', 100)->nullable();
-            $table->string('provincia', 100)->nullable();
-            $table->string('distrito', 100)->nullable();
+            $table->unsignedBigInteger('id_departamento')->nullable();
+            $table->unsignedBigInteger('id_provincia')->nullable();
+            $table->unsignedBigInteger('id_distrito')->nullable();
 
-            // Dirección exacta (la llena el admin)
             $table->text('direccion_entrega')->nullable();
-
-            // Tiempo de entrega (la llena el admin)
             $table->string('tiempo_entrega', 100)->nullable();
-
-            // Archivo adjunto (lo sube el admin)
             $table->string('archivo_adjunto', 255)->nullable();
 
-            // FKs
             $table->unsignedBigInteger('id_usuario')->nullable();
             $table->unsignedBigInteger('id_cupon')->nullable();
             $table->unsignedBigInteger('id_tipo_entrega')->nullable();
@@ -167,15 +174,16 @@ return new class extends Migration
 
             $table->foreign('id_usuario')
                 ->references('id_usuario')->on('usuario');
-
             $table->foreign('id_cupon')
                 ->references('id_cupon')->on('cupones');
-
             $table->foreign('id_tipo_entrega')
                 ->references('id_tipo_entrega')->on('tipo_entrega');
+            
+            $table->foreign('id_departamento')->references('id_departamento')->on('departamento');
+            $table->foreign('id_provincia')->references('id_provincia')->on('provincia');
+            $table->foreign('id_distrito')->references('id_distrito')->on('distrito');
         });
 
-        // Cupones usados
         Schema::create('cupones_usados', function (Blueprint $table) {
             $table->id('id_cupon_usado');
 
@@ -201,7 +209,6 @@ return new class extends Migration
                   ->onDelete('cascade');
         });
 
-        // Detalle pedido
         Schema::create('detalle_pedido', function (Blueprint $table) {
             $table->id('id_detalle_pedido');
 
@@ -216,7 +223,6 @@ return new class extends Migration
             $table->foreign('id_variante')->references('id_variante')->on('producto_variante');
         });
 
-        // Carrito
         Schema::create('carrito', function (Blueprint $table) {
             $table->id('id_carrito');
             $table->unsignedBigInteger('id_usuario')->unique();
@@ -225,7 +231,6 @@ return new class extends Migration
             $table->foreign('id_usuario')->references('id_usuario')->on('usuario');
         });
 
-        // Detalle carrito
         Schema::create('detalle_carrito', function (Blueprint $table) {
             $table->id('id_detalle_carrito');
 
@@ -241,7 +246,6 @@ return new class extends Migration
             $table->foreign('id_variante')->references('id_variante')->on('producto_variante');
         });
 
-        // Favoritos
         Schema::create('favoritos', function (Blueprint $table) {
             $table->id('id_favorito');
 
@@ -256,14 +260,12 @@ return new class extends Migration
             $table->foreign('id_producto')->references('id_producto')->on('producto');
         });
 
-        // Ventas
         Schema::create('ventas', function (Blueprint $table) {
             $table->id('id_venta');
             $table->decimal('total', 10, 2)->default(0);
             $table->timestamps();
         });
 
-        // Detalle ventas
         Schema::create('venta_detalles', function (Blueprint $table) {
             $table->id('id_venta_detalle');
             $table->foreignId('id_venta')->constrained('ventas', 'id_venta')->cascadeOnDelete();
@@ -274,7 +276,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Sanctum
         Schema::create('personal_access_tokens', function (Blueprint $table) {
             $table->id();
             $table->morphs('tokenable');
@@ -286,7 +287,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Banners
         Schema::create('banners', function (Blueprint $table) {
             $table->id('id_banner');
             $table->string('titulo', 100)->unique();
@@ -319,5 +319,8 @@ return new class extends Migration
         Schema::dropIfExists('usuario');
         Schema::dropIfExists('tipo_documento');
         Schema::dropIfExists('rol');
+        Schema::dropIfExists('distrito');
+        Schema::dropIfExists('provincia');
+        Schema::dropIfExists('departamento');
     }
 };

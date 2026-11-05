@@ -59,12 +59,6 @@ class PagoController extends Controller
             $client  = new PaymentClient();
             $payment = $client->get($paymentId);
 
-            \Log::info('Webhook MP recibido', [
-                'payment_id' => $paymentId,
-                'status'     => $payment->status,
-                'external'   => $payment->external_reference ?? null,
-            ]);
-
             if ($payment->status === 'approved' && $payment->external_reference) {
                 $this->crearPedidoSiNoExiste(
                     $payment->external_reference,
@@ -73,10 +67,6 @@ class PagoController extends Controller
             }
 
         } catch (\Throwable $e) {
-            \Log::error('Webhook MP error', [
-                'msg'        => $e->getMessage(),
-                'payment_id' => $paymentId,
-            ]);
         }
 
         return response()->json(['status' => 'ok'], 200);
@@ -96,10 +86,6 @@ class PagoController extends Controller
         $data = Cache::get("checkout:{$referencia}");
 
         if (!$data) {
-            \Log::warning('Checkout no encontrado en caché', [
-                'referencia' => $referencia,
-                'payment_id' => $paymentId,
-            ]);
             return null;
         }
 
@@ -131,9 +117,9 @@ class PagoController extends Controller
                     'id_usuario'        => $data['id_usuario'],
                     'id_cupon'          => $data['id_cupon'] ?? null,
                     'id_tipo_entrega'   => $data['id_tipo_entrega'],
-                    'departamento'      => $data['departamento'] ?? null,
-                    'provincia'         => $data['provincia'] ?? null,
-                    'distrito'          => $data['distrito'] ?? null,
+                    'id_departamento'   => $data['id_departamento'] ?? null,
+                    'id_provincia'      => $data['id_provincia'] ?? null,
+                    'id_distrito'       => $data['id_distrito'] ?? null,
                     'direccion_entrega' => null,
                     'tiempo_entrega'    => null,
                 ]);
@@ -183,13 +169,6 @@ class PagoController extends Controller
             return $pedido->load('detalles.variante.producto');
 
         } catch (\Throwable $e) {
-            \Log::error('Error creando pedido post-pago', [
-                'msg'        => $e->getMessage(),
-                'linea'      => $e->getLine(),
-                'archivo'    => $e->getFile(),
-                'referencia' => $referencia,
-                'payment_id' => $paymentId,
-            ]);
             return null;
         }
     }

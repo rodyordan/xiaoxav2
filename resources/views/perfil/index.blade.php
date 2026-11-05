@@ -414,11 +414,7 @@
                                                     <div class="flex justify-between gap-4">
                                                         <span class="text-xs text-gray-600 shrink-0">Destino</span>
                                                         <span class="text-xs font-semibold text-black text-right max-w-[60%]">
-                                                            {{ collect([
-                                                                $pedido->departamento,
-                                                                $pedido->provincia,
-                                                                $pedido->distrito,
-                                                            ])->filter()->implode(', ') ?: '—' }}
+                                                            {{ $pedido->ubicacion_completa ?? '—' }}
                                                         </span>
                                                     </div>
                                                 @endunless

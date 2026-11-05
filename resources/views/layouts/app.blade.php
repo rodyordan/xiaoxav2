@@ -27,8 +27,10 @@
         @yield('content')
     </main>
 
-    {{-- FOOTER --}}
-    <x-footer />
+    @hasSection('ocultar-footer')
+    @else
+        <x-footer />
+    @endif
 
     @stack('scripts')
 </body>

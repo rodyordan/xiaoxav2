@@ -7,6 +7,9 @@ use App\Models\Pedido;
 use App\Models\ProductoVariante;
 use App\Models\TipoEntrega;
 use App\Models\TipoDocumento;
+use App\Models\Departamento;
+use App\Models\Provincia;
+use App\Models\Distrito;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -35,12 +38,28 @@ class CheckoutController extends Controller
             ->first();
         $tiposEntrega   = TipoEntrega::all();
         $tiposDocumento = TipoDocumento::all();
+        $departamentos  = Departamento::orderBy('nombre_departamento')->get();
 
         return view('carrito.checkout', compact(
             'carrito',
             'tiposEntrega',
-            'tiposDocumento'
+            'tiposDocumento',
+            'departamentos'
         ));
+    }
+
+    public function getProvincias($id_departamento)
+    {
+        return Provincia::where('id_departamento', $id_departamento)
+            ->orderBy('nombre_provincia')
+            ->get();
+    }
+
+    public function getDistritos($id_provincia)
+    {
+        return Distrito::where('id_provincia', $id_provincia)
+            ->orderBy('nombre_distrito')
+            ->get();
     }
 
     public function confirmar(Request $request)
@@ -78,16 +97,16 @@ class CheckoutController extends Controller
                     }
                 },
             ],
-            'telefono'           => 'required|numeric|digits:9',
-            'departamento'       => 'nullable|string|max:100',
-            'provincia'          => 'nullable|string|max:100',
-            'distrito'           => 'nullable|string|max:100',
+            'telefono'           => ['required', 'numeric', 'regex:/^9\d{8}$/'],
+            'id_departamento'    => 'nullable|integer|exists:departamento,id_departamento',
+            'id_provincia'       => 'nullable|integer|exists:provincia,id_provincia',
+            'id_distrito'        => 'nullable|integer|exists:distrito,id_distrito',
         ], [
             'numero_documento.required' => 'El número de documento es obligatorio.',
             'numero_documento.numeric'  => 'El documento debe contener solo números.',
             'telefono.required'         => 'El teléfono es obligatorio.',
             'telefono.numeric'          => 'El teléfono debe contener solo números.',
-            'telefono.digits'           => 'El teléfono debe tener 9 dígitos.',
+            'telefono.regex'            => 'El teléfono debe comenzar con 9 y tener 9 dígitos.',
         ]);
 
         $user = Auth::user();
@@ -137,9 +156,9 @@ class CheckoutController extends Controller
             'subtotal'          => $subtotal,
             'total'             => $total,
             'id_tipo_entrega'   => (int) $request->id_tipo_entrega,
-            'departamento'      => $request->departamento,
-            'provincia'         => $request->provincia,
-            'distrito'          => $request->distrito,
+            'id_departamento'   => $request->id_departamento,
+            'id_provincia'      => $request->id_provincia,
+            'id_distrito'       => $request->id_distrito,
             'items'             => collect($carrito->detalles)->map(fn($d) => [
                 'id_variante'     => $d->id_variante,
                 'cantidad'        => $d->cantidad,
@@ -149,15 +168,6 @@ class CheckoutController extends Controller
         ];
 
         Cache::put("checkout:{$referencia}", $checkoutData, now()->addHours(2));
-
-        \Log::info('Checkout guardado', [
-            'referencia'      => $referencia,
-            'id_tipo_entrega' => $checkoutData['id_tipo_entrega'],
-            'subtotal'        => $subtotal,
-            'total'           => $total,
-            'items_count'     => count($checkoutData['items']),
-            'id_usuario'      => Auth::id(),
-        ]);
 
         MercadoPagoConfig::setAccessToken(env('MP_ACCESS_TOKEN'));
         $client = new PreferenceClient();

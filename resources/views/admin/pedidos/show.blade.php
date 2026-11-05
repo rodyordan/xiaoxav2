@@ -109,22 +109,21 @@
                             </div>
                         </div>
 
-                        {{-- Fila 4: Ubicación del cliente (solo envío) --}}
                         @if($pedido->id_tipo_entrega == 2)
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                                 <div class="flex items-center gap-2">
                                     <label class="text-[14px] font-bold text-gray-800 shrink-0">Departamento:</label>
-                                    <input type="text" readonly value="{{ $pedido->departamento ?? '—' }}"
+                                    <input type="text" readonly value="{{ $pedido->departamento->nombre_departamento ?? '—' }}"
                                         class="w-full px-3 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-[14px] text-gray-600 focus:outline-none">
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <label class="text-[14px] font-bold text-gray-800 shrink-0">Provincia:</label>
-                                    <input type="text" readonly value="{{ $pedido->provincia ?? '—' }}"
+                                    <input type="text" readonly value="{{ $pedido->provincia->nombre_provincia ?? '—' }}"
                                         class="w-full px-3 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-[14px] text-gray-600 focus:outline-none">
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <label class="text-[14px] font-bold text-gray-800 shrink-0">Distrito:</label>
-                                    <input type="text" readonly value="{{ $pedido->distrito ?? '—' }}"
+                                    <input type="text" readonly value="{{ $pedido->distrito->nombre_distrito ?? '—' }}"
                                         class="w-full px-3 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-[14px] text-gray-600 focus:outline-none">
                                 </div>
                             </div>

@@ -13,7 +13,6 @@ use App\Http\Controllers\Admin\CategoriaController;
 use App\Http\Controllers\Admin\PedidoController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\VentaController;
-use App\Models\Producto;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CuponController;
@@ -25,22 +24,10 @@ Route::get('/api/imagen/{filename}', [ImageController::class, 'show'])
     ->where('filename', '.*')
     ->name('imagen.show');
 
-Route::get('/producto/{id}', function ($id) {
-    $producto = Producto::with(['variantes.imagenes', 'categoria'])
-        ->findOrFail($id);
+Route::get('/producto/{id}', [HomeController::class, 'show'])->name('producto.show');
 
-    $enCarrito = [];
-    if (Auth::check()) {
-        $carrito = \App\Models\Carrito::where('id_usuario', Auth::id())->first();
-        if ($carrito) {
-            $enCarrito = \App\Models\DetalleCarrito::where('id_carrito', $carrito->id_carrito)
-                ->pluck('cantidad', 'id_variante')
-                ->toArray();
-        }
-    }
-
-    return view('producto.detalle', compact('producto', 'enCarrito'));
-})->name('producto.show');
+Route::get('/api/provincias/{id_departamento}', [CheckoutController::class, 'getProvincias']);
+Route::get('/api/distritos/{id_provincia}', [CheckoutController::class, 'getDistritos']);
 
 Route::middleware('auth')->group(function () {
     Route::get('/carrito',                   [CarritoController::class, 'index'])->name('carrito.index');

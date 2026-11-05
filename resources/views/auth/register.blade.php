@@ -11,7 +11,6 @@
                 nombres: '{{ old('nombres') }}',
                 apellidos: '{{ old('apellidos') }}',
                 correo: '{{ old('correo') }}',
-                telefono: '{{ old('telefono') }}',
                 password: '',
                 password_confirmation: '',
                 errores: {},
@@ -25,9 +24,6 @@
                     @endif
                     @if ($errors->has('correo'))
                         this.errores.correo = '{{ $errors->first('correo') }}';
-                    @endif
-                    @if ($errors->has('telefono'))
-                        this.errores.telefono = '{{ $errors->first('telefono') }}';
                     @endif
                     @if ($errors->has('password'))
                         this.errores.password = '{{ $errors->first('password') }}';
@@ -58,13 +54,6 @@
                         this.errores.correo = 'Ingresa un correo electrónico válido.';
                     } else if (correoTrim.length < 10) {
                         this.errores.correo = 'El correo electrónico es demasiado corto.';
-                    }
-
-                    const telTrim = this.telefono.trim();
-                    if (!telTrim) {
-                        this.errores.telefono = 'El teléfono es obligatorio.';
-                    } else if (!/^9\d{8}$/.test(telTrim)) {
-                        this.errores.telefono = 'El teléfono debe comenzar con 9 y tener 9 dígitos.';
                     }
 
                     if (!this.password.trim()) {
@@ -166,29 +155,6 @@
                        class="flex items-center gap-1.5 text-xs text-red-600 mt-1.5 font-medium">
                         <x-heroicon-s-exclamation-circle class="w-3.5 h-3.5 shrink-0" />
                         <span x-text="errores.correo"></span>
-                    </p>
-                </div>
-
-                <div class="mb-5">
-                    <label for="telefono" class="block text-sm font-medium text-gray-700 mb-2">
-                        Teléfono
-                    </label>
-                    <input
-                        type="text"
-                        name="telefono"
-                        id="telefono"
-                        x-model="telefono"
-                        @input="if (errores.telefono) delete errores.telefono; telefono = telefono.replace(/[^0-9]/g, '')"
-                        value="{{ old('telefono') }}"
-                        placeholder="Ingresar teléfono"
-                        maxlength="9"
-                        class="w-full border rounded-lg px-4 py-2.5 text-sm text-black placeholder-gray-400 focus:outline-none transition"
-                        :class="errores.telefono ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-gray-400'"
-                    >
-                    <p x-show="errores.telefono" x-cloak
-                       class="flex items-center gap-1.5 text-xs text-red-600 mt-1.5 font-medium">
-                        <x-heroicon-s-exclamation-circle class="w-3.5 h-3.5 shrink-0" />
-                        <span x-text="errores.telefono"></span>
                     </p>
                 </div>
 

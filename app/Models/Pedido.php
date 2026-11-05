@@ -26,9 +26,9 @@ class Pedido extends Model
         'total_pedido',
         'estado_pedido',
         'payment_id',
-        'departamento',
-        'provincia',
-        'distrito',
+        'id_departamento',
+        'id_provincia',
+        'id_distrito',
         'direccion_entrega',
         'tiempo_entrega',
         'archivo_adjunto',
@@ -36,8 +36,6 @@ class Pedido extends Model
         'id_cupon',
         'id_tipo_entrega',
     ];
-
-    // ── Relaciones ──────────────────────────────────
 
     public function usuario()
     {
@@ -59,31 +57,37 @@ class Pedido extends Model
         return $this->belongsTo(Cupon::class, 'id_cupon', 'id_cupon');
     }
 
-    // 🆕 Registro de uso del cupón (quién lo usó, cuándo, en qué pedido)
     public function cuponUsado()
     {
         return $this->hasOne(CuponUsado::class, 'id_pedido', 'id_pedido');
     }
 
-    // ── Helpers ─────────────────────────────────────
+    public function departamento()
+    {
+        return $this->belongsTo(Departamento::class, 'id_departamento', 'id_departamento');
+    }
 
-    /**
-     * Devuelve la ubicación del cliente formateada (departamento, provincia, distrito).
-     */
+    public function provincia()
+    {
+        return $this->belongsTo(Provincia::class, 'id_provincia', 'id_provincia');
+    }
+
+    public function distrito()
+    {
+        return $this->belongsTo(Distrito::class, 'id_distrito', 'id_distrito');
+    }
+
     public function getUbicacionCompletaAttribute(): ?string
     {
         $partes = array_filter([
-            $this->distrito,
-            $this->provincia,
-            $this->departamento,
+            $this->distrito?->nombre_distrito,
+            $this->provincia?->nombre_provincia,
+            $this->departamento?->nombre_departamento,
         ]);
 
         return $partes ? implode(', ', $partes) : null;
     }
 
-    /**
-     * Verifica si el pedido tiene archivo adjunto.
-     */
     public function tieneArchivo(): bool
     {
         return !empty($this->archivo_adjunto);
