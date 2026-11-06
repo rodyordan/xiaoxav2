@@ -19,8 +19,8 @@
 >
     <div class="bg-white">
         <div class="w-full px-4 sm:px-8">
-            {{-- CAMBIO: En móvil el logo va a la izquierda (auto_1fr_auto) y en PC se centra (sm:grid-cols-[1fr_auto_1fr]) --}}
-            <div class="grid grid-cols-[auto_1fr_auto] sm:grid-cols-[1fr_auto_1fr] items-center gap-2 h-16 sm:h-20">
+            {{-- Logo centrado en móvil y web --}}
+            <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2 h-16 sm:h-20">
 
                 <div class="flex items-center justify-start min-w-0">
                     @if(!$sinAcciones)
@@ -38,8 +38,7 @@
                     @endif
                 </div>
 
-                {{-- CAMBIO: En móvil se alinea a la izquierda (justify-start), en PC se centra (sm:justify-center) --}}
-                <div class="flex items-center justify-start sm:justify-center">
+                <div class="flex items-center justify-center">
                     <a href="{{ url('/') }}">
                         <img src="{{ asset('images/logo.jpeg') }}" alt="Xiaoxa" class="h-10 sm:h-14 w-auto">
                     </a>
@@ -58,7 +57,6 @@
                                aria-label="Seguir comprando"
                                class="flex items-center gap-2 p-1 text-black font-bold text-sm uppercase transition-opacity">
                                 <x-heroicon-o-shopping-bag class="h-6 w-6 text-black shrink-0" />
-                                {{-- En celular solo se ve el ícono para que no se desborde --}}
                                 <span class="hidden sm:inline whitespace-nowrap">Seguir comprando</span>
                             </a>
                         @else

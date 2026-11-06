@@ -147,13 +147,15 @@
                         </span>
                     </div>
 
-                    {{-- CAMBIO: Contenedor flex para poner los botones lado a lado (Seguir comprando + Ir a pagar) --}}
-                    <div class="mt-7 flex flex-col sm:flex-row gap-3">
+                    {{-- Contenedor en web, apilado en móvil --}}
+                    <div class="mt-7 flex flex-col-reverse sm:flex-row gap-3">
+                        {{-- Botón Seguir Comprando: en web a la izq, en móvil abajo --}}
                         <a href="{{ route('home') }}" 
                            class="flex items-center justify-center w-full sm:w-auto bg-white border border-gray-300 text-gray-800 rounded-full py-4 px-8 text-[14px] font-semibold transition-all uppercase hover:bg-gray-50">
                             Seguir comprando
                         </a>
 
+                        {{-- Botón Ir a Pagar: en web a la der, en móvil arriba --}}
                         <a href="{{ route('checkout.index') }}"
                            class="flex items-center justify-center w-full sm:flex-1 bg-gray-900 text-white rounded-full py-4 text-[14px] font-semibold transition-all uppercase">
                             Ir a pagar
@@ -184,6 +186,7 @@
 
 @push('scripts')
 <script>
+    // ... (Tu script de carrito se mantiene exactamente igual)
     function carritoData() {
         return {}
     }

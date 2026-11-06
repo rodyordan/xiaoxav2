@@ -281,19 +281,19 @@
                 <span class="font-semibold text-gray-800 text-sm">S/ {{ number_format($total, 2) }}</span>
             </div>
 
-            {{-- CAMBIO: Contenedor flex para poner los botones lado a lado (Seguir comprando + Ir a pagar) --}}
-            <div class="mt-7 flex flex-col sm:flex-row gap-3">
-                <a href="{{ route('home') }}"
-                   class="flex items-center justify-center w-full sm:w-auto bg-white border border-gray-300 text-gray-800 rounded-full py-4 px-8 text-[14px] font-semibold transition-all uppercase hover:bg-gray-50">
-                    Seguir comprando
-                </a>
+            <button @click="intentarPagar"
+                class="flex mt-7 items-center justify-center w-full bg-gray-900 text-white rounded-full py-4 text-[14px] font-semibold transition-all uppercase">
+                <span>Ir a pagar</span>
+            </button>
 
-                <button @click="intentarPagar"
-                    class="flex items-center justify-center w-full sm:flex-1 bg-gray-900 text-white rounded-full py-4 text-[14px] font-semibold transition-all uppercase">
-                    <span>Ir a pagar</span>
-                </button>
-            </div>
+        </div>
 
+        {{-- Botón Seguir Comprando FUERA del contenedor de resumen, solo visible en móvil --}}
+        <div class="mt-4 sm:hidden">
+            <a href="{{ route('home') }}"
+               class="flex items-center justify-center w-full bg-white border border-gray-300 text-gray-800 rounded-full py-4 px-8 text-[14px] font-semibold transition-all uppercase hover:bg-gray-50">
+                Seguir comprando
+            </a>
         </div>
     </div>
 
@@ -314,6 +314,7 @@
 
 @push('scripts')
 <script>
+    // ... (Tu script de checkout se mantiene exactamente igual)
     function checkoutData(totalProductos) {
         return {
             tipoEntrega:         {{ $tiposEntrega->first()->id_tipo_entrega ?? 1 }},
