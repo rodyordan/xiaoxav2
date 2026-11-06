@@ -1,11 +1,14 @@
 @extends('layouts.app')
 
+@section('ocultar-footer', true)
 @section('title', 'Compra finalizada - Xiaoxa')
 
 @section('content')
 
-<div class="max-w-7xl mx-auto px-4 sm:px-8 pt-6 pb-2">
-    <div class="flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
+<div class="flex flex-col items-center justify-center px-4 sm:px-8 py-8 relative" style="min-height: calc(100vh - 160px);">
+    
+    <!-- Breadcrumbs en la parte superior -->
+    <div class="absolute top-6 left-0 right-0 flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
         <a href="{{ route('carrito.index') }}" class="flex items-center gap-1">
             <span class="text-sm sm:text-[20px] font-normal text-gray-800">Mi bolsa</span>
         </a>
@@ -14,12 +17,9 @@
         <x-heroicon-o-chevron-right class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 shrink-0" />
         <span class="text-sm sm:text-[20px] font-bold text-gray-800">Compra finalizada</span>
     </div>
-</div>
 
-<div class="max-w-7xl mx-auto px-4 sm:px-8 py-8 sm:py-12">
-
-    <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-10 text-center max-w-lg mx-auto">
-
+    <!-- Tarjeta centrada -->
+    <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-10 text-center w-full max-w-lg mt-12 sm:mt-0">
         <div class="w-16 h-16 sm:w-20 sm:h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg class="w-8 h-8 sm:w-10 sm:h-10 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
@@ -40,8 +40,8 @@
            class="block w-full border border-gray-200 rounded-full py-3.5 text-sm font-semibold hover:bg-gray-50 transition-colors">
             Ver mis pedidos
         </a>
-
     </div>
+
 </div>
 
 @endsection

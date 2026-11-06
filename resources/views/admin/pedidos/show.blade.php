@@ -10,26 +10,26 @@
         .paso-clickable:disabled { cursor: not-allowed; }
     </style>
 
-    <div class="max-w-7xl mx-auto" x-data="pedidoEstado({{ Js::from($pedido->estado_pedido) }})">
+    {{-- CAMBIO AQUÍ: Cambiamos max-w-7xl por w-full para que ocupe todo el espacio --}}
+    <div class="w-full px-4 sm:px-8 py-6" x-data="pedidoEstado({{ Js::from($pedido->estado_pedido) }})">
 
         {{-- Header con título y botones a la derecha --}}
-        <div class="flex items-center justify-between gap-4 mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div>
-                <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">Detalles del Pedido</h1>
+                <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Detalles del Pedido</h1>
             </div>
 
             <div class="flex items-center gap-3 shrink-0">
                 <a href="{{ route('admin.pedidos.index') }}"
-                   class="bg-white text-gray-700 border border-gray-300 rounded-2xl py-4 px-14 text-base font-bold text-center
-                          transition-colors duration-200
-                          hover:bg-gray-50">
+                   class="bg-white text-gray-700 border border-gray-300 rounded-xl py-2.5 px-8 text-sm font-bold text-center
+                          transition-colors duration-200 hover:bg-gray-50">
                     Cancelar
                 </a>
 
                 <button type="button"
                         @click="enviarFormulario('guardar')"
-                        class="bg-indigo-600 text-white rounded-2xl py-4 px-14 text-base font-bold
-                               transition-colors duration-200">
+                        class="bg-indigo-600 text-white rounded-xl py-2.5 px-8 text-sm font-bold
+                               transition-colors duration-200 hover:bg-indigo-700">
                     Guardar
                 </button>
             </div>
@@ -48,10 +48,10 @@
                 {{-- COLUMNA IZQUIERDA: PEDIDO --}}
                 <div class="lg:col-span-2 space-y-6">
 
-                    <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
+                    <div class="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm">
 
                         {{-- HEADER: Pedido + código + Fecha --}}
-                        <div class="flex items-center justify-between gap-4 mb-6">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                             <div class="flex items-center gap-3">
                                 <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600">
                                     <x-heroicon-o-clipboard-document-list class="w-5 h-5" />
@@ -67,64 +67,64 @@
 
                         {{-- Fila 1: Cliente | Tipo de entrega --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div class="flex items-center gap-2">
-                                <label class="text-[14px] font-bold text-gray-800 shrink-0">Cliente:</label>
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                <label class="text-[14px] font-bold text-gray-800 shrink-0 sm:w-32">Cliente:</label>
                                 <input type="text" readonly
                                     value="{{ $pedido->usuario->nombres }} {{ $pedido->usuario->apellidos }}"
-                                    class="w-full px-3 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-[14px] text-gray-600 focus:outline-none">
+                                    class="w-full px-4 py-2 border border-gray-200 rounded-xl bg-gray-50 text-[14px] text-gray-600 focus:outline-none">
                             </div>
 
-                            <div class="flex items-center gap-2">
-                                <label class="text-[14px] font-bold text-gray-800 shrink-0">Tipo de entrega:</label>
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                <label class="text-[14px] font-bold text-gray-800 shrink-0 sm:w-32">Tipo de entrega:</label>
                                 <input type="text" readonly
                                     value="{{ $pedido->tipoEntrega?->nombre_tipo_entrega ?? '—' }}"
-                                    class="w-full px-3 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-[14px] text-gray-600 focus:outline-none">
+                                    class="w-full px-4 py-2 border border-gray-200 rounded-xl bg-gray-50 text-[14px] text-gray-600 focus:outline-none">
                             </div>
                         </div>
 
                         {{-- Fila 2: Tipo de documento | Número de documento --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div class="flex items-center gap-2">
-                                <label class="text-[14px] font-bold text-gray-800 shrink-0">Tipo de documento:</label>
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                <label class="text-[14px] font-bold text-gray-800 shrink-0 sm:w-32">Tipo de documento:</label>
                                 <input type="text" readonly
                                     value="{{ $pedido->usuario->tipoDocumento->nombre_tipo_documento ?? 'N/A' }}"
-                                    class="w-full px-3 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-[14px] text-gray-600 focus:outline-none">
+                                    class="w-full px-4 py-2 border border-gray-200 rounded-xl bg-gray-50 text-[14px] text-gray-600 focus:outline-none">
                             </div>
 
-                            <div class="flex items-center gap-2">
-                                <label class="text-[14px] font-bold text-gray-800 shrink-0">Número de documento:</label>
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                <label class="text-[14px] font-bold text-gray-800 shrink-0 sm:w-32">Número de documento:</label>
                                 <input type="text" readonly
                                     value="{{ $pedido->usuario->numero_documento ?? 'N/A' }}"
-                                    class="w-full px-3 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-[14px] text-gray-600 focus:outline-none">
+                                    class="w-full px-4 py-2 border border-gray-200 rounded-xl bg-gray-50 text-[14px] text-gray-600 focus:outline-none">
                             </div>
                         </div>
 
                         {{-- Fila 3: Teléfono --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div class="flex items-center gap-2">
-                                <label class="text-[14px] font-bold text-gray-800 shrink-0">Teléfono:</label>
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                <label class="text-[14px] font-bold text-gray-800 shrink-0 sm:w-32">Teléfono:</label>
                                 <input type="text" readonly
                                     value="{{ $pedido->usuario->telefono ?? 'N/A' }}"
-                                    class="w-full px-3 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-[14px] text-gray-600 focus:outline-none">
+                                    class="w-full px-4 py-2 border border-gray-200 rounded-xl bg-gray-50 text-[14px] text-gray-600 focus:outline-none">
                             </div>
                         </div>
 
                         @if($pedido->id_tipo_entrega == 2)
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                                <div class="flex items-center gap-2">
-                                    <label class="text-[14px] font-bold text-gray-800 shrink-0">Departamento:</label>
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                    <label class="text-[14px] font-bold text-gray-800 shrink-0 sm:w-28">Departamento:</label>
                                     <input type="text" readonly value="{{ $pedido->departamento->nombre_departamento ?? '—' }}"
-                                        class="w-full px-3 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-[14px] text-gray-600 focus:outline-none">
+                                        class="w-full px-4 py-2 border border-gray-200 rounded-xl bg-gray-50 text-[14px] text-gray-600 focus:outline-none">
                                 </div>
-                                <div class="flex items-center gap-2">
-                                    <label class="text-[14px] font-bold text-gray-800 shrink-0">Provincia:</label>
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                    <label class="text-[14px] font-bold text-gray-800 shrink-0 sm:w-24">Provincia:</label>
                                     <input type="text" readonly value="{{ $pedido->provincia->nombre_provincia ?? '—' }}"
-                                        class="w-full px-3 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-[14px] text-gray-600 focus:outline-none">
+                                        class="w-full px-4 py-2 border border-gray-200 rounded-xl bg-gray-50 text-[14px] text-gray-600 focus:outline-none">
                                 </div>
-                                <div class="flex items-center gap-2">
-                                    <label class="text-[14px] font-bold text-gray-800 shrink-0">Distrito:</label>
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                    <label class="text-[14px] font-bold text-gray-800 shrink-0 sm:w-20">Distrito:</label>
                                     <input type="text" readonly value="{{ $pedido->distrito->nombre_distrito ?? '—' }}"
-                                        class="w-full px-3 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-[14px] text-gray-600 focus:outline-none">
+                                        class="w-full px-4 py-2 border border-gray-200 rounded-xl bg-gray-50 text-[14px] text-gray-600 focus:outline-none">
                                 </div>
                             </div>
                         @else
@@ -132,14 +132,14 @@
                         @endif
 
                         {{-- TABLA DE PRODUCTOS --}}
-                        <div class="overflow-hidden rounded-2xl border border-gray-100">
-                            <table class="w-full text-left border-collapse table-fixed">
+                        <div class="overflow-x-auto rounded-2xl border border-gray-100">
+                            <table class="w-full text-left border-collapse min-w-[600px]">
                                 <thead>
-                                    <tr class="bg-[#f1f1f1]">
-                                        <th class="w-[45%] px-5 py-4 text-base font-black text-gray-800 text-left border-b border-gray-200">Producto</th>
-                                        <th class="w-[18%] px-2 py-4 text-base font-black text-gray-800 text-center border-b border-gray-200">Precio Unit.</th>
-                                        <th class="w-[17%] px-2 py-4 text-base font-black text-gray-800 text-center border-b border-gray-200">Cantidad</th>
-                                        <th class="w-[20%] px-5 py-4 text-base font-black text-gray-800 text-right border-b border-gray-200">Subtotal</th>
+                                    <tr class="bg-gray-50">
+                                        <th class="w-[45%] px-5 py-4 text-sm font-bold text-gray-700 border-b border-gray-200">Producto</th>
+                                        <th class="w-[18%] px-2 py-4 text-sm font-bold text-gray-700 text-center border-b border-gray-200">Precio Unit.</th>
+                                        <th class="w-[17%] px-2 py-4 text-sm font-bold text-gray-700 text-center border-b border-gray-200">Cantidad</th>
+                                        <th class="w-[20%] px-5 py-4 text-sm font-bold text-gray-700 text-right border-b border-gray-200">Subtotal</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -148,9 +148,9 @@
                                             $variante = $detalle->variante;
                                             $producto = $variante?->producto;
                                         @endphp
-                                        <tr class="border-b border-gray-200">
+                                        <tr class="border-b border-gray-200 hover:bg-gray-50 transition-colors">
                                             <td class="px-5 py-4">
-                                                <p class="font-normal text-gray-800 text-base leading-tight">
+                                                <p class="font-medium text-gray-900 text-sm">
                                                     {{ $producto->nombre_producto ?? 'Producto eliminado' }}
                                                 </p>
                                                 <p class="text-xs text-gray-500 mt-1">
@@ -159,15 +159,15 @@
                                                 </p>
                                             </td>
                                             <td class="px-2 py-4 text-center">
-                                                <span class="font-normal text-gray-800 text-base whitespace-nowrap">
+                                                <span class="text-sm text-gray-700 whitespace-nowrap">
                                                     S/ {{ number_format($detalle->precio_unitario, 2) }}
                                                 </span>
                                             </td>
                                             <td class="px-2 py-4 text-center">
-                                                <span class="font-normal text-gray-800 text-base">{{ $detalle->cantidad }}</span>
+                                                <span class="text-sm text-gray-700">{{ $detalle->cantidad }}</span>
                                             </td>
                                             <td class="px-5 py-4 text-right">
-                                                <span class="font-normal text-gray-800 text-base whitespace-nowrap">
+                                                <span class="text-sm text-gray-700 whitespace-nowrap">
                                                     S/ {{ number_format($detalle->subtotal, 2) }}
                                                 </span>
                                             </td>
@@ -179,19 +179,19 @@
                                         <tr class="border-t border-gray-200">
                                             <td class="px-5 py-4"></td>
                                             <td class="px-2 py-4"></td>
-                                            <td class="px-2 py-4 text-center text-base font-normal text-gray-800">
+                                            <td class="px-2 py-4 text-center text-sm text-gray-700">
                                                 Descuento
                                             </td>
-                                            <td class="px-5 py-4 text-right text-base font-normal text-gray-800 whitespace-nowrap">
+                                            <td class="px-5 py-4 text-right text-sm text-gray-700 whitespace-nowrap">
                                                 - S/ {{ number_format($pedido->descuento, 2) }}
                                             </td>
                                         </tr>
                                     @endif
-                                    <tr class="border-t border-gray-200">
+                                    <tr class="border-t border-gray-200 bg-gray-50">
                                         <td class="px-5 py-4"></td>
                                         <td class="px-2 py-4"></td>
-                                        <td class="px-2 py-4 text-center text-base font-bold text-gray-800">Total</td>
-                                        <td class="px-5 py-4 text-right text-base font-bold text-gray-800 whitespace-nowrap">
+                                        <td class="px-2 py-4 text-center text-sm font-bold text-gray-900">Total</td>
+                                        <td class="px-5 py-4 text-right text-sm font-bold text-gray-900 whitespace-nowrap">
                                             S/ {{ number_format($pedido->total_pedido, 2) }}
                                         </td>
                                     </tr>
@@ -207,7 +207,7 @@
                 <div class="space-y-6">
 
                     {{-- ESTADO --}}
-                    <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
+                    <div class="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm">
 
                         <div class="flex items-center gap-3 mb-6">
                             <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600">
@@ -236,7 +236,7 @@
 
                         <div x-init="init({{ Js::from($pasos) }}, {{ $esRetiroTienda ? 'true' : 'false' }})"></div>
 
-                        {{-- PASOS (colores negros) --}}
+                        {{-- PASOS --}}
                         <div class="flex items-start w-full">
                             <template x-for="(paso, i) in pasos" :key="i">
                                 <div class="contents">
@@ -284,7 +284,7 @@
                     </div>
 
                     {{-- DATOS DE ENTREGA --}}
-                    <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
+                    <div class="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm">
 
                         <div class="flex items-center gap-3 mb-6">
                             <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600">
@@ -296,31 +296,31 @@
                         <div class="space-y-5">
 
                             {{-- Fecha --}}
-                            <div class="flex items-center gap-2">
-                                <label class="text-[14px] font-bold text-gray-800 shrink-0">Fecha:</label>
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                <label class="text-[14px] font-bold text-gray-800 shrink-0 sm:w-20">Fecha:</label>
                                 <input type="text" name="tiempo_entrega"
                                     value="{{ $pedido->tiempo_entrega ?? '' }}"
-                                    class="flex-1 px-4 py-1.5 border border-gray-200 rounded-full bg-gray-50 text-[14px] text-gray-600 focus:outline-none focus:border-gray-400 transition-colors">
+                                    class="w-full px-4 py-2 border border-gray-200 rounded-xl bg-gray-50 text-[14px] text-gray-600 focus:outline-none focus:border-gray-400 transition-colors">
                             </div>
 
                             {{-- Dirección --}}
-                            <div class="flex items-start gap-2">
-                                <label class="text-[14px] font-bold text-gray-800 shrink-0 mt-3">Dirección:</label>
+                            <div class="flex flex-col sm:flex-row items-start gap-1 sm:gap-2">
+                                <label class="text-[14px] font-bold text-gray-800 shrink-0 sm:mt-2 sm:w-20">Dirección:</label>
                                 <textarea name="direccion_entrega" rows="3"
-                                    class="flex-1 px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 text-[14px] text-gray-600 focus:outline-none focus:border-gray-400 transition-colors resize-none">{{ $pedido->direccion_entrega ?? '' }}</textarea>
+                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-[14px] text-gray-600 focus:outline-none focus:border-gray-400 transition-colors resize-none">{{ $pedido->direccion_entrega ?? '' }}</textarea>
                             </div>
 
                             {{-- Ticket (archivo) --}}
                             <div class="flex flex-col gap-2" x-data="archivoGuia()">
                                 <label class="text-[14px] font-bold text-gray-800">Ticket de envío:</label>
                                 <div class="flex-1 min-w-0">
-                                    <div class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-2 py-1.5 max-w-full">
-                                        <span class="text-[13px] text-gray-500 truncate max-w-[200px]" x-text="nombreArchivo || 'Ningún archivo seleccionado'"></span>
+                                    <div class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-2 py-1.5 max-w-full">
+                                        <span class="text-[13px] text-gray-500 truncate max-w-[150px]" x-text="nombreArchivo || 'Ningún archivo'"></span>
 
                                         <button type="button"
                                             @click="$refs.archivoInput.click()"
-                                            class="shrink-0 bg-[#dbe3ff] text-[#3b3bb3] text-[13px] font-medium px-4 py-1.5 rounded-full hover:bg-[#cfd8ff] transition">
-                                            <span x-text="tieneArchivo ? 'Cambiar archivo' : 'Seleccionar archivo'"></span>
+                                            class="shrink-0 bg-indigo-50 text-indigo-700 text-[13px] font-medium px-4 py-1.5 rounded-lg hover:bg-indigo-100 transition">
+                                            <span x-text="tieneArchivo ? 'Cambiar' : 'Seleccionar'"></span>
                                         </button>
 
                                         <input type="file" x-ref="archivoInput"
@@ -425,7 +425,7 @@
                 : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>';
 
             const toast = document.createElement('div');
-            toast.className = `toast-dinamico pointer-events-auto flex items-center gap-4 p-5 bg-white shadow-2xl rounded-[2rem] border border-${color}-100 min-w-[340px] max-w-md fixed top-6 right-6 z-[999]`;
+            toast.className = `toast-dinamico pointer-events-auto flex items-center gap-4 p-5 bg-white shadow-2xl rounded-3xl border border-${color}-100 min-w-[340px] max-w-md fixed top-6 right-6 z-[999]`;
             toast.style.opacity = '0';
             toast.style.transform = 'translateX(20px)';
             toast.style.transition = 'all 0.3s ease';
