@@ -19,8 +19,8 @@
 >
     <div class="bg-white">
         <div class="w-full px-4 sm:px-8">
-            {{-- Izquierda y derecha se reparten el espacio; el logo ocupa solo lo que necesita --}}
-            <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2 h-16 sm:h-20">
+            {{-- CAMBIO: En móvil el logo va a la izquierda (auto_1fr_auto) y en PC se centra (sm:grid-cols-[1fr_auto_1fr]) --}}
+            <div class="grid grid-cols-[auto_1fr_auto] sm:grid-cols-[1fr_auto_1fr] items-center gap-2 h-16 sm:h-20">
 
                 <div class="flex items-center justify-start min-w-0">
                     @if(!$sinAcciones)
@@ -38,7 +38,8 @@
                     @endif
                 </div>
 
-                <div class="flex items-center justify-center">
+                {{-- CAMBIO: En móvil se alinea a la izquierda (justify-start), en PC se centra (sm:justify-center) --}}
+                <div class="flex items-center justify-start sm:justify-center">
                     <a href="{{ url('/') }}">
                         <img src="{{ asset('images/logo.jpeg') }}" alt="Xiaoxa" class="h-10 sm:h-14 w-auto">
                     </a>
@@ -123,7 +124,6 @@
                          @click.outside="open = false"
                          @keydown.escape.window="open = false">
 
-                        {{-- @click permite abrirlo también con el dedo en tablets --}}
                         <button @click="open = true" class="text-base font-normal text-black flex items-center gap-1">
                             Categorías
                         </button>
@@ -223,7 +223,6 @@
             <div class="relative max-w-md mx-auto">
                 <div class="flex items-center bg-[#f1f1f1] rounded-full px-3 py-1">
                     <x-heroicon-o-magnifying-glass class="w-5 h-5 text-black mr-2" />
-                    {{-- text-base evita que iPhone haga zoom automático al tocar el campo --}}
                     <input
                         x-model="query"
                         @keydown.enter="submit()"

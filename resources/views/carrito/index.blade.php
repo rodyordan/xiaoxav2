@@ -122,7 +122,6 @@
                         </span>
                     </div>
 
-                    {{-- Fila completa extra para el botón Eliminar abajo a la derecha --}}
                     <div class="col-span-2 sm:col-span-12 flex justify-end mt-1 sm:mt-0">
                         <button type="button" 
                                 onclick="eliminarProducto('{{ $id }}', this.closest('[data-item-id]'))"
@@ -148,10 +147,18 @@
                         </span>
                     </div>
 
-                    <a href="{{ route('checkout.index') }}"
-                       class="flex mt-7 items-center justify-center w-full bg-gray-900 text-white rounded-full py-4 text-[14px] font-semibold transition-all uppercase">
-                        Ir a pagar
-                    </a>
+                    {{-- CAMBIO: Contenedor flex para poner los botones lado a lado (Seguir comprando + Ir a pagar) --}}
+                    <div class="mt-7 flex flex-col sm:flex-row gap-3">
+                        <a href="{{ route('home') }}" 
+                           class="flex items-center justify-center w-full sm:w-auto bg-white border border-gray-300 text-gray-800 rounded-full py-4 px-8 text-[14px] font-semibold transition-all uppercase hover:bg-gray-50">
+                            Seguir comprando
+                        </a>
+
+                        <a href="{{ route('checkout.index') }}"
+                           class="flex items-center justify-center w-full sm:flex-1 bg-gray-900 text-white rounded-full py-4 text-[14px] font-semibold transition-all uppercase">
+                            Ir a pagar
+                        </a>
+                    </div>
                 </div>
 
             </div>
