@@ -19,7 +19,6 @@
 >
     <div class="bg-white">
         <div class="w-full px-4 sm:px-8">
-            {{-- Logo centrado en móvil y web --}}
             <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2 h-16 sm:h-20">
 
                 <div class="flex items-center justify-start min-w-0">
@@ -52,10 +51,11 @@
                         </button>
 
                         @if($modoCarrito)
+                            {{-- CAMBIO: hidden sm:flex para ocultar en móvil y mostrar en web --}}
                             <a href="{{ route('home') }}"
                                title="Seguir comprando"
                                aria-label="Seguir comprando"
-                               class="flex items-center gap-2 p-1 text-black font-bold text-sm uppercase transition-opacity">
+                               class="hidden sm:flex items-center gap-2 p-1 text-black font-bold text-sm uppercase transition-opacity">
                                 <x-heroicon-o-shopping-bag class="h-6 w-6 text-black shrink-0" />
                                 <span class="hidden sm:inline whitespace-nowrap">Seguir comprando</span>
                             </a>

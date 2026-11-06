@@ -147,20 +147,16 @@
                         </span>
                     </div>
 
-                    {{-- Contenedor en web, apilado en móvil --}}
-                    <div class="mt-7 flex flex-col-reverse sm:flex-row gap-3">
-                        {{-- Botón Seguir Comprando: en web a la izq, en móvil abajo --}}
-                        <a href="{{ route('home') }}" 
-                           class="flex items-center justify-center w-full sm:w-auto bg-white border border-gray-300 text-gray-800 rounded-full py-4 px-8 text-[14px] font-semibold transition-all uppercase hover:bg-gray-50">
-                            Seguir comprando
-                        </a>
+                    <a href="{{ route('checkout.index') }}"
+                       class="flex mt-7 items-center justify-center w-full bg-gray-900 text-white rounded-full py-4 text-[14px] font-semibold transition-all uppercase">
+                        Ir a pagar
+                    </a>
 
-                        {{-- Botón Ir a Pagar: en web a la der, en móvil arriba --}}
-                        <a href="{{ route('checkout.index') }}"
-                           class="flex items-center justify-center w-full sm:flex-1 bg-gray-900 text-white rounded-full py-4 text-[14px] font-semibold transition-all uppercase">
-                            Ir a pagar
-                        </a>
-                    </div>
+                    {{-- Botón Seguir Comprando SOLO EN MÓVIL, debajo del Ir a pagar, sin contenedores --}}
+                    <a href="{{ route('home') }}" 
+                       class="flex sm:hidden mt-3 items-center justify-center w-full bg-white border border-gray-300 text-gray-800 rounded-full py-4 text-[14px] font-semibold transition-all uppercase hover:bg-gray-50">
+                        Seguir comprando
+                    </a>
                 </div>
 
             </div>
@@ -187,153 +183,67 @@
 @push('scripts')
 <script>
     // ... (Tu script de carrito se mantiene exactamente igual)
-    function carritoData() {
-        return {}
-    }
-
+    function carritoData() { return {} }
     async function cambiarCantidad(idVariante, delta, btn) {
         const fila = btn.closest('[data-item-id]');
         if (!fila) return;
-
         const cantidadEl = fila.querySelector('.cantidad-display');
         const subtotalEl = fila.querySelector('.subtotal-display');
         const btnAumentar = fila.querySelector('.btn-aumentar');
         const selectorEl = fila.querySelector('.selector-cantidad');
         const precio = parseFloat(fila.dataset.precio) || 0;
-
         const cantidadActual = parseInt(cantidadEl.textContent.trim());
         const stock = btnAumentar ? parseInt(btnAumentar.dataset.stock) : 999;
-
         const nuevaCantidad = cantidadActual + delta;
-
-        if (nuevaCantidad < 1) {
-            await eliminarProducto(idVariante, fila);
-            return;
-        }
-
+        if (nuevaCantidad < 1) { await eliminarProducto(idVariante, fila); return; }
         if (nuevaCantidad > stock) return;
-
-        if (selectorEl) {
-            selectorEl.style.opacity = '0.4';
-            selectorEl.style.pointerEvents = 'none';
-        }
-
+        if (selectorEl) { selectorEl.style.opacity = '0.4'; selectorEl.style.pointerEvents = 'none'; }
         try {
             let url;
-            if (delta > 0) {
-                url = `{{ url('/carrito/aumentar') }}/${idVariante}`;
-            } else {
-                url = `{{ url('/carrito/disminuir') }}/${idVariante}`;
-            }
-
-            await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                },
-                credentials: 'same-origin',
-            });
-
+            if (delta > 0) { url = `{{ url('/carrito/aumentar') }}/${idVariante}`; } else { url = `{{ url('/carrito/disminuir') }}/${idVariante}`; }
+            await fetch(url, { method: 'GET', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', }, credentials: 'same-origin', });
             cantidadEl.textContent = nuevaCantidad;
             const nuevoSubtotal = precio * nuevaCantidad;
             subtotalEl.textContent = 'S/ ' + nuevoSubtotal.toFixed(2);
-
             recalcularTotalGlobal();
-
-        } catch (error) {
-        } finally {
-            restaurarSelector(fila, nuevaCantidad, stock);
-        }
+        } catch (error) {} finally { restaurarSelector(fila, nuevaCantidad, stock); }
     }
-
     async function eliminarProducto(idVariante, fila) {
         const selectorEl = fila.querySelector('.selector-cantidad');
         const btnEliminar = fila.querySelector('button[onclick*="eliminarProducto"]');
-        
-        if (selectorEl) {
-            selectorEl.style.opacity = '0.4';
-            selectorEl.style.pointerEvents = 'none';
-        }
-        if (btnEliminar) {
-            btnEliminar.style.pointerEvents = 'none';
-        }
-
+        if (selectorEl) { selectorEl.style.opacity = '0.4'; selectorEl.style.pointerEvents = 'none'; }
+        if (btnEliminar) { btnEliminar.style.pointerEvents = 'none'; }
         try {
             const url = `{{ url('/carrito/eliminar') }}/${idVariante}`;
-
-            await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                },
-                credentials: 'same-origin',
-            });
-
+            await fetch(url, { method: 'GET', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', }, credentials: 'same-origin', });
             fila.style.transition = 'opacity 0.2s, transform 0.2s';
-            fila.style.opacity = '0';
-            fila.style.transform = 'translateX(-20px)';
-
-            setTimeout(() => {
-                fila.remove();
-                recalcularTotalGlobal();
-
-                const quedanItems = document.querySelectorAll('[data-item-id]');
-                if (quedanItems.length === 0) {
-                    window.location.reload();
-                }
-            }, 200);
-
+            fila.style.opacity = '0'; fila.style.transform = 'translateX(-20px)';
+            setTimeout(() => { fila.remove(); recalcularTotalGlobal(); const quedanItems = document.querySelectorAll('[data-item-id]'); if (quedanItems.length === 0) { window.location.reload(); } }, 200);
         } catch (error) {
             fila.style.opacity = '1';
-            if (selectorEl) {
-                selectorEl.style.opacity = '1';
-                selectorEl.style.pointerEvents = 'auto';
-            }
-            if (btnEliminar) {
-                btnEliminar.style.pointerEvents = 'auto';
-            }
+            if (selectorEl) { selectorEl.style.opacity = '1'; selectorEl.style.pointerEvents = 'auto'; }
+            if (btnEliminar) { btnEliminar.style.pointerEvents = 'auto'; }
         }
     }
-
     function restaurarSelector(fila, cantidad, stock) {
         const selectorEl = fila.querySelector('.selector-cantidad');
         const btnAumentar = fila.querySelector('.btn-aumentar');
-
         if (!selectorEl) return;
-
-        selectorEl.style.opacity = '1';
-        selectorEl.style.pointerEvents = 'auto';
-
+        selectorEl.style.opacity = '1'; selectorEl.style.pointerEvents = 'auto';
         if (btnAumentar) {
-            if (cantidad >= stock) {
-                btnAumentar.classList.add('cursor-not-allowed');
-                btnAumentar.classList.remove('hover:bg-gray-100');
-                btnAumentar.disabled = true;
-            } else {
-                btnAumentar.classList.remove('cursor-not-allowed');
-                btnAumentar.classList.add('hover:bg-gray-100');
-                btnAumentar.disabled = false;
-            }
+            if (cantidad >= stock) { btnAumentar.classList.add('cursor-not-allowed'); btnAumentar.classList.remove('hover:bg-gray-100'); btnAumentar.disabled = true;
+            } else { btnAumentar.classList.remove('cursor-not-allowed'); btnAumentar.classList.add('hover:bg-gray-100'); btnAumentar.disabled = false; }
         }
     }
-
     function recalcularTotalGlobal() {
         let total = 0;
-
         document.querySelectorAll('[data-item-id]').forEach(fila => {
             const precio = parseFloat(fila.dataset.precio) || 0;
-            const cantidad = parseInt(
-                fila.querySelector('.cantidad-display').textContent.trim()
-            );
+            const cantidad = parseInt(fila.querySelector('.cantidad-display').textContent.trim());
             total += precio * cantidad;
         });
-
         const totalEl = document.querySelector('.total-global');
-        if (totalEl) {
-            totalEl.textContent = 'S/ ' + total.toFixed(2);
-        }
+        if (totalEl) { totalEl.textContent = 'S/ ' + total.toFixed(2); }
     }
 </script>
 @endpush
