@@ -20,7 +20,7 @@
 <body class="bg-[#fbfaf8] text-gray-900 min-h-screen flex flex-col">
     {{-- NAVBAR STICKY --}}
     <div class="sticky top-0 z-50">
-        <x-navbar :modoCarrito="request()->routeIs('carrito.*') || request()->routeIs('checkout.*') || request()->routeIs('pago.*')" />
+        <x-navbar :modoCarrito="request()->routeIs('carrito.*') || request()->routeIs('checkout.*') || request()->routeIs('pago.*') || request()->routeIs('perfil.*')" />
     </div>
 
     <main class="flex-1 w-full" style="min-height: calc(100vh - 160px);">

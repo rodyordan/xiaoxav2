@@ -19,10 +19,13 @@
 >
     <div class="bg-white">
         <div class="w-full px-4 sm:px-8">
-            <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2 h-16 sm:h-20">
+            {{-- Contenedor principal con posición relativa para centrar el logo absoluto en móvil --}}
+            <div class="relative flex items-center justify-between lg:grid lg:grid-cols-[1fr_auto_1fr] h-16 sm:h-20">
 
+                {{-- Bloque Izquierdo --}}
                 <div class="flex items-center justify-start min-w-0">
                     @if(!$sinAcciones)
+                        {{-- Buscador Escritorio --}}
                         <div class="hidden lg:flex items-center bg-[#f1f1f1] rounded-full px-3 py-1">
                             <x-heroicon-o-magnifying-glass class="w-5 h-5 text-black mr-2" />
                             <input
@@ -34,31 +37,26 @@
                                 class="w-48 bg-transparent focus:outline-none text-black placeholder-black text-sm py-1"
                             >
                         </div>
+
+                        {{-- Lupa Móvil (Alineada a la izquierda) --}}
+                        <button @click="searchOpen = !searchOpen" class="lg:hidden p-1" aria-label="Buscar">
+                            <x-heroicon-o-magnifying-glass x-show="!searchOpen" x-cloak class="h-6 w-6 sm:h-7 sm:w-7 text-black" />
+                        </button>
                     @endif
                 </div>
 
-                <div class="flex items-center justify-center">
+                {{-- Logo (Centrado en móvil con absolute, centrado en PC con grid) --}}
+                <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 lg:static lg:translate-x-0 lg:translate-y-0 flex items-center justify-center">
                     <a href="{{ url('/') }}">
                         <img src="{{ asset('images/logo.jpeg') }}" alt="Xiaoxa" class="h-10 sm:h-14 w-auto">
                     </a>
                 </div>
 
+                {{-- Bloque Derecho --}}
                 <div class="flex items-center justify-end gap-0.5 sm:gap-1 min-w-0">
                     @if(!$sinAcciones)
-                        <button @click="searchOpen = !searchOpen" class="lg:hidden p-1" aria-label="Buscar">
-                            <x-heroicon-o-magnifying-glass x-show="!searchOpen" x-cloak class="h-6 w-6 sm:h-7 sm:w-7 text-black" />
-                            <x-heroicon-o-x-mark x-show="searchOpen" x-cloak class="h-6 w-6 sm:h-7 sm:w-7 text-black" />
-                        </button>
-
                         @if($modoCarrito)
-                            {{-- CAMBIO: hidden sm:flex para ocultar en móvil y mostrar en web --}}
-                            <a href="{{ route('home') }}"
-                               title="Seguir comprando"
-                               aria-label="Seguir comprando"
-                               class="hidden sm:flex items-center gap-2 p-1 text-black font-bold text-sm uppercase transition-opacity">
-                                <x-heroicon-o-shopping-bag class="h-6 w-6 text-black shrink-0" />
-                                <span class="hidden sm:inline whitespace-nowrap">Seguir comprando</span>
-                            </a>
+                            {{-- Botón "Seguir comprando" eliminado --}}
                         @else
                             @auth
                                 @if(auth()->user()->hasVerifiedEmail())
@@ -219,7 +217,7 @@
             class="lg:hidden border-t border-gray-100 px-4 py-3 bg-white shadow-md"
         >
             <div class="relative max-w-md mx-auto">
-                <div class="flex items-center bg-[#f1f1f1] rounded-full px-3 py-1">
+                <div class="flex items-center bg-[#f1f1f1] rounded-full px-3 py-1 pr-10">
                     <x-heroicon-o-magnifying-glass class="w-5 h-5 text-black mr-2" />
                     <input
                         x-model="query"
@@ -228,6 +226,10 @@
                         placeholder="Buscar productos..."
                         class="w-full bg-transparent focus:outline-none text-black placeholder-black text-base py-1"
                     >
+                    {{-- La X ahora va dentro del input, a la derecha --}}
+                    <button @click="searchOpen = false" class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-black hover:text-gray-600">
+                        <x-heroicon-o-x-mark class="w-5 h-5" />
+                    </button>
                 </div>
             </div>
         </div>

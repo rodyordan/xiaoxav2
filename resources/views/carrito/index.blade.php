@@ -152,9 +152,10 @@
                         Ir a pagar
                     </a>
 
-                    {{-- Botón Seguir Comprando SOLO EN MÓVIL, debajo del Ir a pagar, sin contenedores --}}
+                    {{-- Botón Seguir Comprando modificado para móvil: solo texto e ícono --}}
                     <a href="{{ route('home') }}" 
-                       class="flex sm:hidden mt-3 items-center justify-center w-full bg-white border border-gray-300 text-gray-800 rounded-full py-4 text-[14px] font-semibold transition-all uppercase hover:bg-gray-50">
+                       class="flex mt-6 items-center justify-center gap-2 w-full sm:w-auto mx-auto text-gray-800 text-sm font-semibold transition-all hover:text-gray-600">
+                        <x-heroicon-o-arrow-left class="w-4 h-4" />
                         Seguir comprando
                     </a>
                 </div>

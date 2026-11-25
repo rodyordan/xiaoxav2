@@ -5,19 +5,46 @@
 @section('content')
 <div
     x-data="{ seccion: '{{ request('seccion', $errors->any() ? 'editar' : 'info') }}' }"
-    class="min-h-[calc(100vh-150px)] bg-[#fbfaf8] py-8 px-4"
+    class="min-h-[calc(100vh-150px)] bg-[#fbfaf8] py-6 md:py-8 px-8 sm:px-10 md:px-12"
 >
 
     <div class="max-w-5xl mx-auto">
 
-        {{-- TÍTULO --}}
+        {{-- TÍTULO (Visible en Web y Móvil) --}}
         <h1 class="text-2xl font-normal text-black text-center mb-8">Mi cuenta</h1>
 
-        {{-- GRID: 1/3 IZQUIERDA + 2/3 DERECHA --}}
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-16">
+        {{-- MENÚ MÓVIL (Oculto en Web) --}}
+        <div class="md:hidden flex flex-wrap justify-center gap-2 bg-[#f1f1f1] border border-gray-300 rounded-full p-1 mb-6">
+            <a href="#"
+                @click.prevent="seccion = 'info'"
+                :class="seccion === 'info' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-700 hover:bg-gray-200'"
+                class="flex items-center gap-2 px-4 py-2 rounded-full transition text-sm font-medium">
+                <x-heroicon-o-user class="w-4 h-4 shrink-0" />
+                Información
+            </a>
 
-            {{-- CARD IZQUIERDA --}}
-            <div class="md:col-span-1 bg-[#f1f1f1] border border-gray-300 rounded-lg p-4 h-[430px] flex flex-col w-full max-w-[260px]">
+            <a href="#"
+                @click.prevent="seccion = 'editar'"
+                :class="seccion === 'editar' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-700 hover:bg-gray-200'"
+                class="flex items-center gap-2 px-4 py-2 rounded-full transition text-sm font-medium">
+                <x-heroicon-o-pencil-square class="w-4 h-4 shrink-0" />
+                Editar
+            </a>
+
+            <a href="#"
+                @click.prevent="seccion = 'pedidos'"
+                :class="seccion === 'pedidos' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-700 hover:bg-gray-200'"
+                class="flex items-center gap-2 px-4 py-2 rounded-full transition text-sm font-medium">
+                <x-heroicon-o-shopping-bag class="w-4 h-4 shrink-0" />
+                Pedidos
+            </a>
+        </div>
+
+        {{-- GRID ORIGINAL: 1/3 IZQUIERDA + 2/3 DERECHA --}}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-16">
+
+            {{-- CARD IZQUIERDA (Oculta en móvil, visible en Web) --}}
+            <div class="hidden md:flex md:col-span-1 bg-[#f1f1f1] border border-gray-300 rounded-lg p-4 h-[430px] flex-col w-full max-w-[260px]">
 
                 <div class="flex items-center gap-3 pb-4 mb-3 border-b border-gray-300">
                     <div class="w-10 h-10 rounded-full bg-black flex items-center justify-center text-white text-sm font-bold shrink-0">
@@ -56,21 +83,23 @@
 
                 </nav>
 
+                {{-- Botón Cerrar sesión Web (Sin ícono) --}}
                 <form method="POST" action="{{ route('logout') }}" class="mt-auto pt-4">
                     @csrf
-                    <button type="submit" class="flex items-center gap-3 px-3 py-2 text-black hover:bg-gray-200 rounded-md transition w-full">
-                        <x-heroicon-o-arrow-left-on-rectangle class="w-5 h-5 shrink-0" />
+                    <button type="submit" class="flex items-center justify-center px-3 py-2 text-black hover:bg-gray-200 rounded-md transition w-full">
                         <span class="text-xs uppercase tracking-wider">Cerrar sesión</span>
                     </button>
                 </form>
 
             </div>
 
-            {{-- CARD DERECHA --}}
-            <div class="md:col-span-2 bg-[#f1f1f1] border border-gray-300 rounded-lg pl-10 pr-0 py-0 h-[430px] flex flex-col overflow-hidden">
+            {{-- CARD DERECHA (Contenido) --}}
+            {{-- En móvil se deja sin padding externo (py-6), en web mantiene su padding --}}
+            <div class="md:col-span-2 bg-[#f1f1f1] border border-gray-300 rounded-lg md:pl-10 md:pr-0 py-6 md:py-0 md:h-[430px] flex flex-col overflow-hidden">
 
                 {{-- ============ INFO CUENTA ============ --}}
-                <div x-show="seccion === 'info'" class="w-full overflow-y-auto flex-1 pr-10 pt-7 pb-10">
+                {{-- Se aplica px-6 (padding a los lados) en móvil para que respire igual que el detalle --}}
+                <div x-show="seccion === 'info'" class="w-full md:overflow-y-auto flex-1 md:pr-10 md:pt-7 px-6 md:px-0 pb-6 md:pb-10">
 
                     <div class="pb-3 mb-6 border-b border-gray-300">
                         <h2 class="text-xl font-bold text-gray-800">Información de cuenta</h2>
@@ -126,7 +155,7 @@
                 </div>
 
                 {{-- ============ EDITAR DATOS ============ --}}
-                <div x-show="seccion === 'editar'" x-cloak class="w-full overflow-y-auto flex-1 pr-10 pt-7 pb-10">
+                <div x-show="seccion === 'editar'" x-cloak class="w-full md:overflow-y-auto flex-1 md:pr-10 md:pt-7 px-6 md:px-0 pb-6 md:pb-10">
 
                     <div class="pb-3 mb-6 border-b border-gray-300">
                         <h2 class="text-xl font-bold text-gray-800">Editar mis datos</h2>
@@ -220,7 +249,7 @@
                 </div>
 
                 {{-- ============ MIS PEDIDOS ============ --}}
-                <div x-show="seccion === 'pedidos'" x-cloak class="w-full overflow-y-auto flex-1 pr-10 pt-7 pb-10">
+                <div x-show="seccion === 'pedidos'" x-cloak class="w-full md:overflow-y-auto flex-1 md:pr-10 md:pt-7 px-6 md:px-0 pb-6 md:pb-10">
 
                     <div class="pb-3 mb-6 border-b border-gray-300">
                         <h2 class="text-xl font-bold text-gray-800">Mis pedidos</h2>
@@ -265,11 +294,11 @@
                                 <div x-data="{ open: false }" class="bg-white rounded-lg border border-gray-300 overflow-hidden">
 
                                     {{-- HEADER --}}
-                                    <button @click="open = !open" class="w-full px-8 py-3.5 flex items-center justify-between hover:bg-gray-50 transition">
+                                    <button @click="open = !open" class="w-full px-4 md:px-8 py-3.5 flex items-center justify-between hover:bg-gray-50 transition text-left">
 
                                         <div class="flex items-center gap-4 min-w-0">
                                             <div class="flex flex-col items-start gap-0.5 min-w-0">
-                                                <div class="flex items-baseline gap-2">
+                                                <div class="flex items-baseline gap-2 flex-wrap">
                                                     <span class="text-[14px] font-bold text-gray-700">Pedido</span>
                                                     <span class="text-[14px] font-bold text-gray-700">{{ $pedido->numero_pedido }}</span>
                                                 </div>
@@ -280,7 +309,7 @@
                                         </div>
 
                                         <div class="flex items-center gap-3 shrink-0">
-                                            <span class="text-[12px] font-bold text-gray-700">Ver detalles</span>
+                                            <span class="hidden md:inline text-[12px] font-bold text-gray-700">Ver detalles</span>
 
                                             <svg :class="open ? 'rotate-180' : ''" class="w-3 h-3 text-gray-700 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
@@ -289,13 +318,13 @@
                                     </button>
 
                                     {{-- BODY --}}
-                                    <div x-show="open" x-collapse class="border-t border-gray-200 px-12 py-10 space-y-7 bg-gray-50/50">
+                                    <div x-show="open" x-collapse class="border-t border-gray-200 px-4 md:px-12 py-6 md:py-10 space-y-7 bg-gray-50/50">
 
                                         {{-- SEGUIMIENTO --}}
-                                        <div class="bg-white border border-gray-200 rounded-lg px-5 py-6">
+                                        <div class="bg-white border border-gray-200 rounded-lg px-3 md:px-5 py-6 overflow-x-auto">
                                             <p class="text-[10px] font-black text-black uppercase tracking-widest mb-6">Seguimiento</p>
 
-                                            <div class="flex items-start w-full px-2">
+                                            <div class="flex items-start w-full px-2 min-w-[300px]">
                                                 @foreach($pasos as $i => $paso)
                                                     @php
                                                         $completado = $i <= $indiceActual;
@@ -333,14 +362,14 @@
                                         </div>
 
                                         {{-- TABLA DE PRODUCTOS --}}
-                                        <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                            <table class="w-full table-fixed">
+                                        <div class="bg-white rounded-lg border border-gray-200 overflow-x-auto">
+                                            <table class="w-full min-w-[500px] table-fixed">
                                                 <thead>
                                                     <tr class="bg-[#f1f1f1] border-b border-gray-200">
-                                                        <th class="w-[45%] text-left px-5 py-3 text-[12px] text-black">Producto</th>
+                                                        <th class="w-[45%] text-left px-3 md:px-5 py-3 text-[12px] text-black">Producto</th>
                                                         <th class="w-[18%] text-center px-2 py-3 text-[12px] text-black">Precio Unit.</th>
                                                         <th class="w-[17%] text-center px-2 py-3 text-[12px] text-black">Cantidad</th>
-                                                        <th class="w-[20%] text-right px-5 py-3 text-[12px] text-black">Subtotal</th>
+                                                        <th class="w-[20%] text-right px-3 md:px-5 py-3 text-[12px] text-black">Subtotal</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -350,7 +379,7 @@
                                                             $producto = $variante?->producto;
                                                         @endphp
                                                         <tr class="border-b border-gray-100 last:border-0">
-                                                            <td class="px-5 py-3">
+                                                            <td class="px-3 md:px-5 py-3">
                                                                 <p class="text-[11px] text-black">
                                                                     {{ $producto->nombre_producto ?? 'Producto eliminado' }}
                                                                 </p>
@@ -365,7 +394,7 @@
                                                             <td class="px-2 py-3 text-center text-[11px] text-black">
                                                                 {{ $detalle->cantidad }}
                                                             </td>
-                                                            <td class="px-5 py-3 text-right text-[11px] text-black whitespace-nowrap">
+                                                            <td class="px-3 md:px-5 py-3 text-right text-[11px] text-black whitespace-nowrap">
                                                                 S/ {{ number_format($detalle->subtotal, 2) }}
                                                             </td>
                                                         </tr>
@@ -374,23 +403,23 @@
                                                 <tfoot>
                                                     @if($pedido->descuento > 0)
                                                         <tr class="border-t border-gray-100">
-                                                            <td class="px-5 py-3"></td>
+                                                            <td class="px-3 md:px-5 py-3"></td>
                                                             <td class="px-2 py-3"></td>
                                                             <td class="px-2 py-3 text-center text-[11px] text-black">
                                                                 Descuento
                                                             </td>
-                                                            <td class="px-5 py-3 text-right text-[11px] text-black whitespace-nowrap">
+                                                            <td class="px-3 md:px-5 py-3 text-right text-[11px] text-black whitespace-nowrap">
                                                                 - S/ {{ number_format($pedido->descuento, 2) }}
                                                             </td>
                                                         </tr>
                                                     @endif
                                                     <tr class="border-t border-gray-200">
-                                                        <td class="px-5 py-4"></td>
+                                                        <td class="px-3 md:px-5 py-4"></td>
                                                         <td class="px-2 py-4"></td>
                                                         <td class="px-2 py-4 text-center text-[12px] font-bold text-black">
                                                             Total
                                                         </td>
-                                                        <td class="px-5 py-4 text-right text-[12px] font-bold text-black whitespace-nowrap">
+                                                        <td class="px-3 md:px-5 py-4 text-right text-[12px] font-bold text-black whitespace-nowrap">
                                                             S/ {{ number_format($pedido->total_pedido, 2) }}
                                                         </td>
                                                     </tr>
@@ -399,13 +428,13 @@
                                         </div>
 
                                         {{-- DATOS DE ENTREGA --}}
-                                        <div class="bg-white border border-gray-200 rounded-lg px-5 py-4">
+                                        <div class="bg-white border border-gray-200 rounded-lg px-3 md:px-5 py-4">
                                             <p class="text-[10px] font-black text-black uppercase tracking-widest mb-3">Datos de entrega</p>
 
                                             <div class="space-y-2">
                                                 <div class="flex justify-between">
                                                     <span class="text-xs text-gray-600">Tipo de entrega</span>
-                                                    <span class="text-xs font-semibold text-black">
+                                                    <span class="text-xs font-semibold text-black text-right">
                                                         {{ $pedido->tipoEntrega?->nombre_tipo_entrega ?? '—' }}
                                                     </span>
                                                 </div>
@@ -447,10 +476,10 @@
                                             </div>
                                         </div>
 
-                                        {{-- 🆕 ARCHIVO ADJUNTO --}}
+                                        {{-- ARCHIVO ADJUNTO --}}
                                         @if($pedido->archivo_adjunto)
-                                            <div class="bg-white border border-gray-200 rounded-lg px-5 py-4">
-                                                <div class="flex items-center justify-between gap-4">
+                                            <div class="bg-white border border-gray-200 rounded-lg px-3 md:px-5 py-4">
+                                                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                                     <div class="flex items-center gap-3">
                                                         <div class="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center shrink-0">
                                                             <x-heroicon-o-document-arrow-down class="w-5 h-5 text-indigo-600" />
@@ -461,7 +490,7 @@
                                                         </div>
                                                     </div>
                                                     <a href="{{ route('perfil.pedidos.descargar', $pedido->id_pedido) }}"
-                                                       class="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition">
+                                                       class="w-full sm:w-auto text-center px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition">
                                                         Descargar
                                                     </a>
                                                 </div>
@@ -485,6 +514,16 @@
 
             </div>
 
+        </div>
+
+        {{-- CERRAR SESIÓN MÓVIL (Estilo tarjeta blanca con botón negro) --}}
+        <div class="md:hidden mt-8 flex justify-center">
+            <form method="POST" action="{{ route('logout') }}" class="w-full">
+                @csrf
+                <button type="submit" class="flex items-center justify-center w-full bg-black border border-gray-300 rounded-lg py-3.5 text-white text-sm font-normal transition-colors">
+                    Cerrar sesión
+                </button>
+            </form>
         </div>
 
     </div>

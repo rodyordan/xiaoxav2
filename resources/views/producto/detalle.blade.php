@@ -64,7 +64,8 @@
         <div class="w-full lg:w-[65%] min-w-0">
             <div class="flex min-w-0">
 
-                <div class="flex flex-col gap-2 w-[72px] shrink-0 max-h-[800px] overflow-y-auto scroll-gallery pr-1">
+                {{-- Miniaturas: Ocultas en móvil, visibles de sm en adelante --}}
+                <div class="hidden sm:flex flex-col gap-2 w-[72px] shrink-0 max-h-[800px] overflow-y-auto scroll-gallery pr-1">
                     @foreach($todasLasImagenes as $index => $img)
                         <button type="button"
                                 onclick="cambiarImagen(this, '{{ $img['ruta'] }}')"
@@ -75,18 +76,28 @@
                 </div>
 
                 <div class="flex-1 min-w-0 relative overflow-hidden flex items-start justify-center">
-                    <div class="imagen-principal-wrapper">
+                    <div class="imagen-principal-wrapper relative w-full">
                         <img id="imagen-principal"
                              src="{{ $todasLasImagenes->first()['ruta'] ?? '' }}"
                              alt="{{ $producto->nombre_producto }}">
+
+                        {{-- Flechas para móvil --}}
+                        <button type="button" id="btn-prev-img" onclick="imagenAnterior()" class="sm:hidden absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-2 shadow-md z-10 hidden">
+                            <x-heroicon-o-chevron-left class="w-5 h-5 text-black" />
+                        </button>
+                        <button type="button" id="btn-next-img" onclick="imagenSiguiente()" class="sm:hidden absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-2 shadow-md z-10">
+                            <x-heroicon-o-chevron-right class="w-5 h-5 text-black" />
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="w-full lg:w-[35%] space-y-0">
-
-            <div class="pb-5">
+        {{-- Se agregó px-4 (móvil) y sm:px-0 (escritorio) para dar padding al contenido, y mt-8 para separar la marca de la imagen --}}
+        <div class="w-full lg:w-[35%] space-y-0 px-4 sm:px-0 mt-6 lg:mt-0">
+            
+            {{-- Se agregó mt-2 para que la marca baje un poco más --}}
+            <div class="pb-5 mt-2">
                 <p class="text-xs font-semibold text-gray-400 uppercase tracking-[0.2em] mb-2">{{ $producto->marca }}</p>
                 <h1 class="text-[35px] font-normal leading-snug text-gray-800">
                     {{ ucwords(strtolower($producto->nombre_producto)) }}
@@ -167,7 +178,7 @@
                 <p id="toast-error" class="text-xs text-red-600 mt-1.5 font-medium opacity-0 transition-opacity duration-300 pointer-events-none"></p>
             </div>
 
-            <div class="pt-2">
+            <div class="pt-2 pb-6">
                 <form id="form-carrito" action="{{ route('carrito.add', $producto->id_producto) }}" method="POST">
                     @csrf
                     <input type="hidden" name="color"       id="input-color">
@@ -301,15 +312,60 @@
     @endphp
 
     const variantesConImagenes = @json($variantesConImagenes);
+    const todasLasImagenesJs = @json($todasLasImagenes);
 
     let colorSeleccionado = "";
     let tallaSeleccionada = "";
     let cantidad = 1;
     let stockMaximo = 0;
     let stockEnCarrito = 0;
+    let indiceImagenActual = 0; // Controla la imagen actual en móvil
+
+    // Función para actualizar la visibilidad de las flechas
+    function actualizarFlechas() {
+        const btnPrev = document.getElementById('btn-prev-img');
+        const btnNext = document.getElementById('btn-next-img');
+        
+        if (!btnPrev || !btnNext) return;
+
+        if (indiceImagenActual === 0) {
+            btnPrev.classList.add('hidden');
+        } else {
+            btnPrev.classList.remove('hidden');
+        }
+
+        if (indiceImagenActual === todasLasImagenesJs.length - 1) {
+            btnNext.classList.add('hidden');
+        } else {
+            btnNext.classList.remove('hidden');
+        }
+    }
+
+    function imagenAnterior() {
+        if (indiceImagenActual > 0) {
+            indiceImagenActual--;
+            document.getElementById('imagen-principal').src = todasLasImagenesJs[indiceImagenActual].ruta;
+            actualizarFlechas();
+        }
+    }
+
+    function imagenSiguiente() {
+        if (indiceImagenActual < todasLasImagenesJs.length - 1) {
+            indiceImagenActual++;
+            document.getElementById('imagen-principal').src = todasLasImagenesJs[indiceImagenActual].ruta;
+            actualizarFlechas();
+        }
+    }
 
     function cambiarImagen(elemento, ruta) {
         document.getElementById('imagen-principal').src = ruta;
+        
+        // Sincronizar el índice en base a la ruta
+        const index = todasLasImagenesJs.findIndex(img => img.ruta === ruta);
+        if(index !== -1) {
+            indiceImagenActual = index;
+            actualizarFlechas();
+        }
 
         document.querySelectorAll('.thumbnail-btn').forEach(btn => {
             btn.classList.remove('thumbnail-active', 'border-2');
@@ -327,6 +383,13 @@
 
         const ruta = variante.imagenes[0];
         document.getElementById('imagen-principal').src = ruta;
+        
+        // Sincronizar flechas en móvil
+        const index = todasLasImagenesJs.findIndex(img => img.ruta === ruta);
+        if(index !== -1) {
+            indiceImagenActual = index;
+            actualizarFlechas();
+        }
 
         document.querySelectorAll('.thumbnail-btn').forEach(btn => {
             const img = btn.querySelector('img');
@@ -511,6 +574,9 @@
     });
 
     document.addEventListener('DOMContentLoaded', function () {
+        // Inicializar flechas al cargar
+        actualizarFlechas();
+
         const primera = variantesConImagenes[0];
         if (!primera) return;
 
