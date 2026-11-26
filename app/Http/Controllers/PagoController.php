@@ -19,10 +19,11 @@ class PagoController extends Controller
     {
         $pedido = null;
 
-        if ($request->status === 'approved'
+        if (
+            $request->status === 'approved'
             && $request->payment_id
-            && $request->external_reference) {
-
+            && $request->external_reference
+        ) {
             $pedido = $this->crearPedidoSiNoExiste(
                 $request->external_reference,
                 (string) $request->payment_id
@@ -56,7 +57,8 @@ class PagoController extends Controller
 
         try {
             MercadoPagoConfig::setAccessToken(env('MP_ACCESS_TOKEN'));
-            $client  = new PaymentClient();
+
+            $client = new PaymentClient();
             $payment = $client->get($paymentId);
 
             if ($payment->status === 'approved' && $payment->external_reference) {
@@ -74,7 +76,7 @@ class PagoController extends Controller
 
     private function crearPedidoSiNoExiste(string $referencia, string $paymentId): ?Pedido
     {
-        $existente = Pedido::with('detalles.variante.producto')
+        $existente = Pedido::with('detalles')
             ->where('payment_id', $paymentId)
             ->first();
 
@@ -93,17 +95,25 @@ class PagoController extends Controller
             $pedido = DB::transaction(function () use ($data, $paymentId, $referencia) {
 
                 $existe = Pedido::where('payment_id', $paymentId)->first();
+
                 if ($existe) {
                     return $existe;
                 }
 
+                // Obtener y bloquear las variantes para verificar el stock.
+                $variantes = [];
+
                 foreach ($data['items'] as $item) {
-                    $variante = ProductoVariante::find($item['id_variante']);
+                    $variante = ProductoVariante::lockForUpdate()
+                        ->find($item['id_variante']);
+
                     if (!$variante || $variante->stock < $item['cantidad']) {
                         throw new \Exception(
                             "Stock insuficiente para variante {$item['id_variante']}"
                         );
                     }
+
+                    $variantes[$variante->id_variante] = $variante;
                 }
 
                 $pedido = Pedido::create([
@@ -125,16 +135,27 @@ class PagoController extends Controller
                 ]);
 
                 foreach ($data['items'] as $item) {
+                    $variante = $variantes[$item['id_variante']];
+
+                    $cantidad = $item['cantidad'];
+                    $precio = $item['precio_unitario'];
+
+                    // Guardar los datos históricos del producto.
                     DetallePedido::create([
                         'id_pedido'       => $pedido->id_pedido,
-                        'id_variante'     => $item['id_variante'],
-                        'cantidad'        => $item['cantidad'],
-                        'precio_unitario' => $item['precio_unitario'],
-                        'subtotal'        => $item['precio_unitario'] * $item['cantidad'],
+                        'id_variante'     => $variante->id_variante,
+
+                        'nombre_producto' => $item['nombre_producto'],
+                        'talla'           => $item['talla'],
+                        'color'           => $item['color'],
+                        'sku'             => $item['sku'],
+
+                        'cantidad'        => $cantidad,
+                        'precio_unitario' => $precio,
+                        'subtotal'        => $precio * $cantidad,
                     ]);
 
-                    ProductoVariante::where('id_variante', $item['id_variante'])
-                        ->decrement('stock', $item['cantidad']);
+                    $variante->decrement('stock', $cantidad);
                 }
 
                 if (!empty($data['id_cupon'])) {
@@ -151,11 +172,13 @@ class PagoController extends Controller
                 }
 
                 $carrito = Carrito::where('id_usuario', $data['id_usuario'])->first();
+
                 if ($carrito) {
                     $carrito->detalles()->delete();
                 }
 
                 Cache::forget("checkout:{$referencia}");
+
                 Cache::put("checkout-pagado:{$referencia}", [
                     'id_pedido'     => $pedido->id_pedido,
                     'numero_pedido' => $pedido->numero_pedido,
@@ -166,7 +189,7 @@ class PagoController extends Controller
                 return $pedido;
             });
 
-            return $pedido->load('detalles.variante.producto');
+            return $pedido->load('detalles');
 
         } catch (\Throwable $e) {
             return null;

@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Categoria;
-use Illuminate\Support\Facades\File;
 
 class CategoriaController extends Controller
 {
@@ -33,7 +32,7 @@ class CategoriaController extends Controller
 
         Categoria::create([
             'nombre_categoria' => $data['nombre_categoria'],
-            'estado_categoria' => 1
+            'estado_categoria' => 1,
         ]);
 
         if ($request->expectsJson()) {
@@ -107,31 +106,28 @@ class CategoriaController extends Controller
         $categoria->estado_categoria = !$categoria->estado_categoria;
         $categoria->save();
 
-        return redirect()->back()->with('success', 'Estado actualizado correctamente.');
+        return redirect()->back()->with(
+            'success',
+            'Estado actualizado correctamente.'
+        );
     }
 
     public function destroy($id)
     {
-        $categoria = Categoria::with(['productos.variantes.imagenes'])->findOrFail($id);
+        $categoria = Categoria::findOrFail($id);
 
-        foreach ($categoria->productos as $producto) {
-            foreach ($producto->variantes as $variante) {
-                foreach ($variante->imagenes as $img) {
-                    $ruta = storage_path('app/public/variantes/' . $img->imagen);
-                    if (File::exists($ruta)) {
-                        File::delete($ruta);
-                    }
-                    $img->delete();
-                }
-                $variante->delete();
-            }
-            $producto->delete();
+        // No se permite eliminar una categoría que todavía tenga productos.
+        if ($categoria->productos()->exists()) {
+            return redirect()->back()->with(
+                'error',
+                'No se puede eliminar esta categoría porque todavía tiene productos asociados. Primero elimina sus productos.'
+            );
         }
 
         $categoria->delete();
 
         return redirect()
             ->route('admin.categorias.index')
-            ->with('success', 'Categoría eliminada correctamente');
+            ->with('success', 'Categoría eliminada correctamente.');
     }
 }

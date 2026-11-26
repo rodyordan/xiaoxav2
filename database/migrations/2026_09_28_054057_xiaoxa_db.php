@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -27,7 +28,7 @@ return new class extends Migration
             $table->id('id_provincia');
             $table->string('nombre_provincia', 100);
             $table->unsignedBigInteger('id_departamento');
-            
+
             $table->foreign('id_departamento')
                   ->references('id_departamento')
                   ->on('departamento');
@@ -37,7 +38,7 @@ return new class extends Migration
             $table->id('id_distrito');
             $table->string('nombre_distrito', 100);
             $table->unsignedBigInteger('id_provincia');
-            
+
             $table->foreign('id_provincia')
                   ->references('id_provincia')
                   ->on('provincia');
@@ -92,7 +93,9 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->foreign('id_categoria')->references('id_categoria')->on('categoria');
+            $table->foreign('id_categoria')
+                  ->references('id_categoria')
+                  ->on('categoria');
         });
 
         Schema::create('producto_variante', function (Blueprint $table) {
@@ -107,7 +110,9 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->foreign('id_producto')->references('id_producto')->on('producto');
+            $table->foreign('id_producto')
+                  ->references('id_producto')
+                  ->on('producto');
         });
 
         Schema::create('producto_variante_imagen', function (Blueprint $table) {
@@ -174,14 +179,21 @@ return new class extends Migration
 
             $table->foreign('id_usuario')
                 ->references('id_usuario')->on('usuario');
+
             $table->foreign('id_cupon')
                 ->references('id_cupon')->on('cupones');
+
             $table->foreign('id_tipo_entrega')
                 ->references('id_tipo_entrega')->on('tipo_entrega');
-            
-            $table->foreign('id_departamento')->references('id_departamento')->on('departamento');
-            $table->foreign('id_provincia')->references('id_provincia')->on('provincia');
-            $table->foreign('id_distrito')->references('id_distrito')->on('distrito');
+
+            $table->foreign('id_departamento')
+                ->references('id_departamento')->on('departamento');
+
+            $table->foreign('id_provincia')
+                ->references('id_provincia')->on('provincia');
+
+            $table->foreign('id_distrito')
+                ->references('id_distrito')->on('distrito');
         });
 
         Schema::create('cupones_usados', function (Blueprint $table) {
@@ -209,18 +221,32 @@ return new class extends Migration
                   ->onDelete('cascade');
         });
 
+        // DETALLES DE PEDIDOS
         Schema::create('detalle_pedido', function (Blueprint $table) {
             $table->id('id_detalle_pedido');
 
             $table->unsignedBigInteger('id_pedido');
-            $table->unsignedBigInteger('id_variante');
+            $table->unsignedBigInteger('id_variante')->nullable();
+
+            // Datos históricos del producto
+            $table->string('nombre_producto', 150);
+            $table->string('talla', 50);
+            $table->string('color', 50)->nullable();
+            $table->string('sku', 50);
 
             $table->integer('cantidad');
             $table->decimal('precio_unitario', 10, 2);
             $table->decimal('subtotal', 10, 2);
 
-            $table->foreign('id_pedido')->references('id_pedido')->on('pedido')->onDelete('cascade');
-            $table->foreign('id_variante')->references('id_variante')->on('producto_variante');
+            $table->foreign('id_pedido')
+                  ->references('id_pedido')
+                  ->on('pedido')
+                  ->onDelete('cascade');
+
+            $table->foreign('id_variante')
+                  ->references('id_variante')
+                  ->on('producto_variante')
+                  ->nullOnDelete();
         });
 
         Schema::create('carrito', function (Blueprint $table) {
@@ -228,7 +254,9 @@ return new class extends Migration
             $table->unsignedBigInteger('id_usuario')->unique();
             $table->timestamps();
 
-            $table->foreign('id_usuario')->references('id_usuario')->on('usuario');
+            $table->foreign('id_usuario')
+                  ->references('id_usuario')
+                  ->on('usuario');
         });
 
         Schema::create('detalle_carrito', function (Blueprint $table) {
@@ -242,8 +270,14 @@ return new class extends Migration
 
             $table->unique(['id_carrito', 'id_variante']);
 
-            $table->foreign('id_carrito')->references('id_carrito')->on('carrito')->onDelete('cascade');
-            $table->foreign('id_variante')->references('id_variante')->on('producto_variante');
+            $table->foreign('id_carrito')
+                  ->references('id_carrito')
+                  ->on('carrito')
+                  ->onDelete('cascade');
+
+            $table->foreign('id_variante')
+                  ->references('id_variante')
+                  ->on('producto_variante');
         });
 
         Schema::create('favoritos', function (Blueprint $table) {
@@ -256,8 +290,13 @@ return new class extends Migration
 
             $table->unique(['id_usuario', 'id_producto']);
 
-            $table->foreign('id_usuario')->references('id_usuario')->on('usuario');
-            $table->foreign('id_producto')->references('id_producto')->on('producto');
+            $table->foreign('id_usuario')
+                  ->references('id_usuario')
+                  ->on('usuario');
+
+            $table->foreign('id_producto')
+                  ->references('id_producto')
+                  ->on('producto');
         });
 
         Schema::create('ventas', function (Blueprint $table) {
@@ -266,13 +305,29 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        // DETALLES DE VENTAS PRESENCIALES
         Schema::create('venta_detalles', function (Blueprint $table) {
             $table->id('id_venta_detalle');
-            $table->foreignId('id_venta')->constrained('ventas', 'id_venta')->cascadeOnDelete();
-            $table->foreignId('id_variante')->constrained('producto_variante', 'id_variante');
+
+            $table->foreignId('id_venta')
+                  ->constrained('ventas', 'id_venta')
+                  ->cascadeOnDelete();
+
+            $table->foreignId('id_variante')
+                  ->nullable()
+                  ->constrained('producto_variante', 'id_variante')
+                  ->nullOnDelete();
+
+            // Datos históricos del producto
+            $table->string('nombre_producto', 150);
+            $table->string('talla', 50);
+            $table->string('color', 50)->nullable();
+            $table->string('sku', 50);
+
             $table->integer('cantidad');
             $table->decimal('precio_unitario', 10, 2);
             $table->decimal('subtotal', 10, 2);
+
             $table->timestamps();
         });
 

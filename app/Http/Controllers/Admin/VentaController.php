@@ -25,17 +25,17 @@ class VentaController extends Controller
         $productosJson = $productos->map(function ($p) {
             $primeraImagen = $p->variantes->flatMap(fn($v) => $v->imagenes)->first();
 
-            // Colores únicos con su hex
             $colores = [];
+
             foreach ($p->variantes->groupBy('color') as $color => $grupo) {
                 if (!$color) continue;
+
                 $colores[] = [
                     'nombre' => $color,
                     'hex'    => $grupo->first()->color_hex ?? '#cccccc',
                 ];
             }
 
-            // Variantes agrupadas por color
             $variantesAgrupadas = $p->variantes
                 ->groupBy('color')
                 ->map(fn($grupo) => $grupo->map(fn($v) => [
@@ -45,10 +45,11 @@ class VentaController extends Controller
                 ])->values())
                 ->toArray();
 
-            // Imágenes agrupadas por color
             $imagenesPorColor = [];
+
             foreach ($p->variantes->groupBy('color') as $color => $grupo) {
                 if (!$color) continue;
+
                 $urls = $grupo
                     ->flatMap(fn($v) => $v->imagenes)
                     ->map(fn($i) => url('/api/imagen/' . $i->imagen))
@@ -77,15 +78,19 @@ class VentaController extends Controller
             ];
         });
 
-        // Igual que en ProductoController
         $categoriasFiltro = Categoria::orderBy('nombre_categoria')->get();
+
         $marcasFiltro = Producto::whereNotNull('marca')
             ->where('marca', '!=', '')
             ->distinct()
             ->orderBy('marca')
             ->pluck('marca');
 
-        return view('admin.ventas.index', compact('productosJson', 'categoriasFiltro', 'marcasFiltro'));
+        return view('admin.ventas.index', compact(
+            'productosJson',
+            'categoriasFiltro',
+            'marcasFiltro'
+        ));
     }
 
     public function store(Request $request)
@@ -103,33 +108,54 @@ class VentaController extends Controller
             $detalles = [];
 
             foreach ($request->items as $item) {
-                $variante = ProductoVariante::lockForUpdate()->findOrFail($item['id_variante']);
+                $variante = ProductoVariante::with('producto')
+                    ->lockForUpdate()
+                    ->findOrFail($item['id_variante']);
 
                 if ($variante->stock < $item['cantidad']) {
-                    throw new \Exception("Stock insuficiente para {$variante->color} / {$variante->talla}. Disponible: {$variante->stock}");
+                    throw new \Exception(
+                        "Stock insuficiente para {$variante->color} / {$variante->talla}. Disponible: {$variante->stock}"
+                    );
                 }
 
-                $precio   = $variante->producto->precio_oferta ?? $variante->producto->precio;
-                $subtotal = $precio * $item['cantidad'];
+                $producto = $variante->producto;
 
+                if (!$producto) {
+                    throw new \Exception('El producto de una variante ya no existe.');
+                }
+
+                $precio = $producto->precio_oferta ?? $producto->precio;
+                $cantidad = $item['cantidad'];
+                $subtotal = $precio * $cantidad;
+
+                // Guardar también los datos históricos del producto.
                 $detalles[] = [
                     'id_variante'     => $variante->id_variante,
-                    'cantidad'        => $item['cantidad'],
+
+                    'nombre_producto' => $producto->nombre_producto,
+                    'talla'           => $variante->talla,
+                    'color'           => $variante->color,
+                    'sku'             => $variante->sku,
+
+                    'cantidad'        => $cantidad,
                     'precio_unitario' => $precio,
                     'subtotal'        => $subtotal,
                 ];
 
                 $total += $subtotal;
 
-                $variante->stock -= $item['cantidad'];
+                $variante->stock -= $cantidad;
                 $variante->save();
             }
 
-            $venta = Venta::create(['total' => $total]);
+            $venta = Venta::create([
+                'total' => $total,
+            ]);
 
-            foreach ($detalles as $d) {
-                $d['id_venta'] = $venta->id_venta;
-                VentaDetalle::create($d);
+            foreach ($detalles as $detalle) {
+                $detalle['id_venta'] = $venta->id_venta;
+
+                VentaDetalle::create($detalle);
             }
 
             DB::commit();

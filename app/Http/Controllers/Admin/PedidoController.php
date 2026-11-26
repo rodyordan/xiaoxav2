@@ -15,6 +15,7 @@ class PedidoController extends Controller
 
         if ($request->filled('buscar')) {
             $buscar = $request->buscar;
+
             $query->where(function ($q) use ($buscar) {
                 $q->where('numero_pedido', 'like', "%{$buscar}%")
                   ->orWhereHas('usuario', function ($q2) use ($buscar) {
@@ -49,8 +50,7 @@ class PedidoController extends Controller
         $pedido = Pedido::with([
             'usuario',
             'tipoEntrega',
-            'detalles.variante.producto',
-            'detalles.variante.imagenes',
+            'detalles',
             'cupon',
             'cuponUsado',
         ])->findOrFail($id);
@@ -61,11 +61,11 @@ class PedidoController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'estado_pedido'     => 'required|in:Pendiente,En camino,Listo para recoger,Entregado',
-            'tiempo_entrega'    => 'nullable|string|max:100',
-            'direccion_entrega' => 'nullable|string|max:500',
-            'archivo_adjunto'   => 'nullable|file|max:10240',
-            'accion'            => 'nullable|in:guardar,estado',
+            'estado_pedido'      => 'required|in:Pendiente,En camino,Listo para recoger,Entregado',
+            'tiempo_entrega'     => 'nullable|string|max:100',
+            'direccion_entrega'  => 'nullable|string|max:500',
+            'archivo_adjunto'    => 'nullable|file|max:10240',
+            'accion'             => 'nullable|in:guardar,estado',
         ]);
 
         $pedido = Pedido::findOrFail($id);
@@ -99,7 +99,6 @@ class PedidoController extends Controller
             $mensaje = "Pedido {$pedido->numero_pedido} actualizado correctamente.";
         }
 
-        // 🆕 Si es AJAX, responder JSON
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
@@ -114,11 +113,9 @@ class PedidoController extends Controller
             ]);
         }
 
-        // Fallback (form normal)
         return back()->with('success', $mensaje);
     }
 
-    // Descargar archivo adjunto
     public function descargarArchivo($id)
     {
         $pedido = Pedido::findOrFail($id);

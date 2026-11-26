@@ -371,21 +371,17 @@
                                                         <th class="w-[17%] text-center px-2 py-3 text-[12px] text-black">Cantidad</th>
                                                         <th class="w-[20%] text-right px-3 md:px-5 py-3 text-[12px] text-black">Subtotal</th>
                                                     </tr>
-                                                </thead>
+                                                </thead>         
                                                 <tbody>
                                                     @foreach($pedido->detalles as $detalle)
-                                                        @php
-                                                            $variante = $detalle->variante;
-                                                            $producto = $variante?->producto;
-                                                        @endphp
                                                         <tr class="border-b border-gray-100 last:border-0">
                                                             <td class="px-3 md:px-5 py-3">
                                                                 <p class="text-[11px] text-black">
-                                                                    {{ $producto->nombre_producto ?? 'Producto eliminado' }}
+                                                                    {{ $detalle->nombre_producto }}
                                                                 </p>
                                                                 <p class="text-[10px] text-gray-500 mt-0.5">
-                                                                    <span>Color: {{ $variante?->color ?? '—' }}</span>
-                                                                    <span class="ml-1">Talla: {{ $variante?->talla ?? '—' }}</span>
+                                                                    <span>Color: {{ $detalle->color ?? '—' }}</span>
+                                                                    <span class="ml-1">Talla: {{ $detalle->talla }}</span>
                                                                 </p>
                                                             </td>
                                                             <td class="px-2 py-3 text-center text-[11px] text-black whitespace-nowrap">

@@ -13,8 +13,7 @@ class PedidoUsuarioController extends Controller
         $pedidos = auth()->user()
             ->pedidos()
             ->with([
-                'detalles.variante.producto',
-                'detalles.variante.imagenes',
+                'detalles',
                 'tipoEntrega',
                 'cupon',
             ])
@@ -25,7 +24,7 @@ class PedidoUsuarioController extends Controller
     }
 
     /**
-     * 🆕 Descargar el archivo adjunto del pedido (vista cliente web)
+     * Descargar el archivo adjunto del pedido (vista cliente web).
      */
     public function descargarArchivo($id)
     {

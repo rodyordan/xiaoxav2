@@ -37,7 +37,7 @@ class DatosBaseSeeder extends Seeder
                 'nombres' => 'Rod',
                 'apellidos' => 'Carhuancho',
                 'correo' => 'i2414151@continental.edu.pe',
-                'contrasena' => Hash::make('palkiegt1789'),
+                'contrasena' => Hash::make('Palkiegt.1789'),
                 'id_rol' => 1,
                 'email_verified_at' => now(),
                 'created_at' => now(),

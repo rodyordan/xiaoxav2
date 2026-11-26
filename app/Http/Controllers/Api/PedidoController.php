@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Storage;
 class PedidoController extends Controller
 {
     /**
-     * Obtener todos los pedidos del usuario autenticado
+     * Obtener todos los pedidos del usuario autenticado.
      */
     public function misPedidos(Request $request)
     {
@@ -19,8 +19,7 @@ class PedidoController extends Controller
 
         $pedidos = Pedido::where('id_usuario', $user->id_usuario)
             ->with([
-                'detalles.variante.producto',
-                'detalles.variante.imagenes',
+                'detalles',
                 'tipoEntrega',
                 'cupon',
             ])
@@ -37,7 +36,7 @@ class PedidoController extends Controller
     }
 
     /**
-     * Obtener un pedido específico del usuario
+     * Obtener un pedido específico del usuario.
      */
     public function show($id)
     {
@@ -45,8 +44,7 @@ class PedidoController extends Controller
 
         $pedido = Pedido::where('id_usuario', $user->id_usuario)
             ->with([
-                'detalles.variante.producto',
-                'detalles.variante.imagenes',
+                'detalles',
                 'tipoEntrega',
                 'cupon',
             ])
@@ -66,7 +64,7 @@ class PedidoController extends Controller
     }
 
     /**
-     * 🆕 Descargar el archivo adjunto del pedido
+     * Descargar el archivo adjunto del pedido.
      */
     public function descargarArchivo($id)
     {
@@ -106,7 +104,7 @@ class PedidoController extends Controller
     }
 
     /**
-     * Formatear un pedido para la respuesta JSON
+     * Formatear un pedido para la respuesta JSON.
      */
     private function formatearPedido($pedido): array
     {
@@ -127,16 +125,16 @@ class PedidoController extends Controller
             'id_tipo_entrega'    => $pedido->id_tipo_entrega,
             'tipo_entrega'       => $pedido->tipoEntrega?->nombre_tipo_entrega,
 
-            // Ubicación del cliente (texto libre)
+            // Ubicación del cliente
             'departamento'       => $pedido->departamento,
             'provincia'          => $pedido->provincia,
-            'distrito'           => $pedido->distrito,
+            'distrito'            => $pedido->distrito,
 
-            // Info de entrega (la llena el admin)
+            // Información de entrega
             'direccion_entrega'  => $pedido->direccion_entrega,
             'tiempo_entrega'     => $pedido->tiempo_entrega,
 
-            // 🆕 Archivo adjunto
+            // Archivo adjunto
             'tiene_archivo'      => !empty($pedido->archivo_adjunto),
             'archivo_url'        => !empty($pedido->archivo_adjunto)
                 ? url("/api/pedidos/{$pedido->id_pedido}/descargar")
@@ -148,11 +146,8 @@ class PedidoController extends Controller
                 'monto'  => (float) $pedido->cupon->monto_cupon,
             ] : null,
 
-            // Detalles
+            // Detalles históricos
             'detalles' => $pedido->detalles->map(function ($detalle) {
-                $variante = $detalle->variante;
-                $producto = $variante?->producto;
-
                 return [
                     'id_detalle'      => $detalle->id_detalle_pedido,
                     'id_variante'     => $detalle->id_variante,
@@ -160,19 +155,18 @@ class PedidoController extends Controller
                     'precio_unitario' => (float) $detalle->precio_unitario,
                     'subtotal'        => (float) $detalle->subtotal,
 
-                    // Producto
-                    'producto' => $producto ? [
-                        'id'       => $producto->id_producto,
-                        'nombre'   => $producto->nombre_producto,
-                        'marca'    => $producto->marca,
-                        'imagen'   => $variante->imagenes->first()
-                            ? url('/api/imagen/' . $variante->imagenes->first()->imagen)
-                            : null,
-                    ] : null,
+                    // Datos del producto guardados en el pedido
+                    'producto' => [
+                        'id'       => null,
+                        'nombre'   => $detalle->nombre_producto,
+                        'marca'    => null,
+                        'imagen'   => null,
+                    ],
 
-                    // Variante
-                    'color' => $variante?->color,
-                    'talla' => $variante?->talla,
+                    // Datos de la variante guardados en el pedido
+                    'color' => $detalle->color,
+                    'talla' => $detalle->talla,
+                    'sku'   => $detalle->sku,
                 ];
             }),
         ];

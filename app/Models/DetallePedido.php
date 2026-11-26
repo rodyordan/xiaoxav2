@@ -14,6 +14,10 @@ class DetallePedido extends Model
     protected $fillable = [
         'id_pedido',
         'id_variante',
+        'nombre_producto',
+        'talla',
+        'color',
+        'sku',
         'cantidad',
         'precio_unitario',
         'subtotal',
@@ -24,8 +28,6 @@ class DetallePedido extends Model
         'precio_unitario' => 'decimal:2',
         'subtotal'        => 'decimal:2',
     ];
-
-    // ── Relaciones
 
     public function pedido()
     {

@@ -144,28 +144,30 @@
                                 </thead>
                                 <tbody>
                                     @foreach($pedido->detalles as $detalle)
-                                        @php
-                                            $variante = $detalle->variante;
-                                            $producto = $variante?->producto;
-                                        @endphp
                                         <tr class="border-b border-gray-200">
                                             <td class="px-5 py-4">
                                                 <p class="font-normal text-gray-800 text-base leading-tight">
-                                                    {{ $producto->nombre_producto ?? 'Producto eliminado' }}
+                                                    {{ $detalle->nombre_producto }}
                                                 </p>
+
                                                 <p class="text-xs text-gray-500 mt-1">
-                                                    <span>Color: {{ $variante?->color ?? '—' }}</span>
-                                                    <span class="ml-2">Talla: {{ $variante?->talla ?? '—' }}</span>
+                                                    <span>Color: {{ $detalle->color ?? '—' }}</span>
+                                                    <span class="ml-2">Talla: {{ $detalle->talla }}</span>
                                                 </p>
                                             </td>
+
                                             <td class="px-2 py-4 text-center">
                                                 <span class="font-normal text-gray-800 text-base whitespace-nowrap">
                                                     S/ {{ number_format($detalle->precio_unitario, 2) }}
                                                 </span>
                                             </td>
+
                                             <td class="px-2 py-4 text-center">
-                                                <span class="font-normal text-gray-800 text-base">{{ $detalle->cantidad }}</span>
+                                                <span class="font-normal text-gray-800 text-base">
+                                                    {{ $detalle->cantidad }}
+                                                </span>
                                             </td>
+
                                             <td class="px-5 py-4 text-right">
                                                 <span class="font-normal text-gray-800 text-base whitespace-nowrap">
                                                     S/ {{ number_format($detalle->subtotal, 2) }}

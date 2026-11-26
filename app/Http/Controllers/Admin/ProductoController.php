@@ -9,6 +9,7 @@ use App\Models\ProductoVariante;
 use App\Models\ProductoVarianteImagen;
 use App\Models\Categoria;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use App\Services\PusherBeamsService;
 
@@ -42,15 +43,17 @@ class ProductoController extends Controller
                 case 'agotado':
                     $query->whereDoesntHave('variantes', fn($q) => $q->where('stock', '>', 0));
                     break;
+
                 case 'bajo':
                     $query->whereHas('variantes', fn($q) => $q->where('stock', '>', 0))
-                          ->withSum('variantes as stock_total', 'stock')
-                          ->having('stock_total', '<=', 10);
+                        ->withSum('variantes as stock_total', 'stock')
+                        ->having('stock_total', '<=', 10);
                     break;
+
                 case 'disponible':
                     $query->whereHas('variantes', fn($q) => $q->where('stock', '>', 0))
-                          ->withSum('variantes as stock_total', 'stock')
-                          ->having('stock_total', '>', 10);
+                        ->withSum('variantes as stock_total', 'stock')
+                        ->having('stock_total', '>', 10);
                     break;
             }
         }
@@ -58,6 +61,7 @@ class ProductoController extends Controller
         $productos = $query->paginate($perPage)->withQueryString();
 
         $categoriasFiltro = Categoria::orderBy('nombre_categoria')->get();
+
         $marcasFiltro = Producto::whereNotNull('marca')
             ->where('marca', '!=', '')
             ->distinct()
@@ -70,6 +74,7 @@ class ProductoController extends Controller
     public function create()
     {
         $categorias = Categoria::all();
+
         return view('admin.productos.create', compact('categorias'));
     }
 
@@ -85,15 +90,17 @@ class ProductoController extends Controller
             ->filter(fn($d) => $d !== '' && $d !== null)
             ->values()
             ->toArray();
+
         $request->merge(['detalles' => $detalles]);
 
         $variantes = collect($request->variantes ?? [])->map(function ($v) {
             return array_merge($v, [
                 'talla' => trim((string) ($v['talla'] ?? '')),
                 'color' => isset($v['color']) ? trim((string) $v['color']) : null,
-                'sku'   => isset($v['sku']) && $v['sku'] !== '' ? trim((string) $v['sku']) : null,
+                'sku' => isset($v['sku']) && $v['sku'] !== '' ? trim((string) $v['sku']) : null,
             ]);
         })->toArray();
+
         $request->merge(['variantes' => $variantes]);
 
         $request->validate([
@@ -144,6 +151,7 @@ class ProductoController extends Controller
         $combinaciones = collect($request->variantes)->map(fn($v) =>
             strtolower($v['talla']) . '-' . strtolower($v['color'] ?? '')
         );
+
         if ($combinaciones->duplicates()->isNotEmpty()) {
             throw \Illuminate\Validation\ValidationException::withMessages([
                 'variantes' => ['No puedes repetir la misma combinación de Talla y Color.'],
@@ -151,7 +159,11 @@ class ProductoController extends Controller
         }
 
         $producto = Producto::create(array_merge($request->only([
-            'nombre_producto', 'precio', 'precio_oferta', 'marca', 'id_categoria'
+            'nombre_producto',
+            'precio',
+            'precio_oferta',
+            'marca',
+            'id_categoria'
         ]), [
             'detalles' => $request->detalles
         ]));
@@ -170,7 +182,9 @@ class ProductoController extends Controller
                     if (!$foto instanceof \Illuminate\Http\UploadedFile) {
                         continue;
                     }
+
                     $nombre = $this->cargarArchivo($foto, 'variantes');
+
                     ProductoVarianteImagen::create([
                         'id_variante' => $variante->id_variante,
                         'imagen' => $nombre,
@@ -189,7 +203,8 @@ class ProductoController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.productos.index')->with('success', 'Producto creado exitosamente.');
+        return redirect()->route('admin.productos.index')
+            ->with('success', 'Producto creado exitosamente.');
     }
 
     public function edit($id)
@@ -217,15 +232,17 @@ class ProductoController extends Controller
             ->filter(fn($d) => $d !== '' && $d !== null)
             ->values()
             ->toArray();
+
         $request->merge(['detalles' => $detalles]);
 
         $variantes = collect($request->variantes ?? [])->map(function ($v) {
             return array_merge($v, [
                 'talla' => trim((string) ($v['talla'] ?? '')),
                 'color' => isset($v['color']) ? trim((string) $v['color']) : null,
-                'sku'   => isset($v['sku']) && $v['sku'] !== '' ? trim((string) $v['sku']) : null,
+                'sku' => isset($v['sku']) && $v['sku'] !== '' ? trim((string) $v['sku']) : null,
             ]);
         })->toArray();
+
         $request->merge(['variantes' => $variantes]);
 
         $rules = [
@@ -251,7 +268,8 @@ class ProductoController extends Controller
                 'string',
                 'max:50',
                 'distinct',
-                Rule::unique('producto_variante', 'sku')->ignore($v['id_variante'] ?? null, 'id_variante'),
+                Rule::unique('producto_variante', 'sku')
+                    ->ignore($v['id_variante'] ?? null, 'id_variante'),
             ];
         }
 
@@ -285,13 +303,60 @@ class ProductoController extends Controller
         $combinaciones = collect($request->variantes)->map(fn($v) =>
             strtolower($v['talla']) . '-' . strtolower($v['color'] ?? '')
         );
+
         if ($combinaciones->duplicates()->isNotEmpty()) {
             throw \Illuminate\Validation\ValidationException::withMessages([
                 'variantes' => ['Hay combinaciones de Talla y Color duplicadas.'],
             ]);
         }
 
-        $datos = $request->only(['nombre_producto', 'precio', 'precio_oferta', 'marca', 'estado_producto', 'id_categoria']);
+        /*
+         * IDENTIFICAR LAS VARIANTES QUE SE QUIEREN ELIMINAR.
+         *
+         * Son las variantes que existen actualmente en la base de datos,
+         * pero cuyos ID ya no vienen en el formulario.
+         */
+        $idsEnviadosFormulario = collect($request->variantes)
+            ->pluck('id_variante')
+            ->filter()
+            ->map(fn($id) => (int) $id)
+            ->values();
+
+        $variantesAEliminar = $producto->variantes()
+            ->with('imagenes')
+            ->whereNotIn('id_variante', $idsEnviadosFormulario)
+            ->get();
+
+        /*
+         * IMPEDIR LA ELIMINACIÓN DE VARIANTES CON STOCK.
+         *
+         * Esta comprobación se hace antes de actualizar el producto
+         * o modificar cualquiera de sus variantes.
+         */
+        if ($variantesAEliminar->contains(fn($variante) => $variante->stock > 0)) {
+            $mensaje = 'No puedes eliminar una variante que todavía tiene stock. Primero debe agotarse su stock.';
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $mensaje,
+                ], 422);
+            }
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', $mensaje);
+        }
+
+        $datos = $request->only([
+            'nombre_producto',
+            'precio',
+            'precio_oferta',
+            'marca',
+            'estado_producto',
+            'id_categoria'
+        ]);
+
         $datos['detalles'] = $request->detalles;
 
         $producto->update($datos);
@@ -314,17 +379,23 @@ class ProductoController extends Controller
                     'color' => $v['color'] ?? null,
                     'color_hex' => $v['color_hex'] ?? null,
                     'stock' => $v['stock'],
-                    'sku'   => $sku,
+                    'sku' => $sku,
                 ]
             );
+
             $idsEnviados[] = $variante->id_variante;
 
             if (isset($v['imagenes_eliminar']) && is_array($v['imagenes_eliminar'])) {
                 foreach ($v['imagenes_eliminar'] as $idImagen) {
                     $img = ProductoVarianteImagen::find($idImagen);
+
                     if ($img && $img->id_variante == $variante->id_variante) {
                         $ruta = storage_path('app/public/variantes/' . $img->imagen);
-                        if (File::exists($ruta)) File::delete($ruta);
+
+                        if (File::exists($ruta)) {
+                            File::delete($ruta);
+                        }
+
                         $img->delete();
                     }
                 }
@@ -332,10 +403,13 @@ class ProductoController extends Controller
 
             if (isset($v['imagenes']) && is_array($v['imagenes'])) {
                 $ordenMax = $variante->imagenes()->max('orden') ?? -1;
+
                 foreach ($v['imagenes'] as $foto) {
                     if ($foto instanceof \Illuminate\Http\UploadedFile) {
                         $ordenMax++;
+
                         $nombre = $this->cargarArchivo($foto, 'variantes');
+
                         ProductoVarianteImagen::create([
                             'id_variante' => $variante->id_variante,
                             'imagen' => $nombre,
@@ -346,17 +420,36 @@ class ProductoController extends Controller
             }
         }
 
-        $variantesAEliminar = $producto->variantes()->whereNotIn('id_variante', $idsEnviados)->get();
+        /*
+         * ELIMINAR LAS VARIANTES SIN STOCK QUE SE QUITARON DEL FORMULARIO.
+         *
+         * Primero se eliminan de los carritos para evitar referencias
+         * a variantes que ya no existen.
+         */
+        $idsVariantesAEliminar = $variantesAEliminar->pluck('id_variante');
+
+        if ($idsVariantesAEliminar->isNotEmpty()) {
+            DB::table('detalle_carrito')
+                ->whereIn('id_variante', $idsVariantesAEliminar)
+                ->delete();
+        }
+
         foreach ($variantesAEliminar as $vElim) {
             foreach ($vElim->imagenes as $img) {
                 $ruta = storage_path('app/public/variantes/' . $img->imagen);
-                if (File::exists($ruta)) File::delete($ruta);
+
+                if (File::exists($ruta)) {
+                    File::delete($ruta);
+                }
+
                 $img->delete();
             }
+
             $vElim->delete();
         }
 
         $tieneOfertaAhora = !is_null($request->precio_oferta) && $request->precio_oferta > 0;
+
         if ($tieneOfertaAhora && (!$teniaOfertaAntes || $precioOfertaAntes != $request->precio_oferta)) {
             $this->pusherBeams->enviarOferta($producto->nombre_producto, $request->precio_oferta);
         }
@@ -368,31 +461,37 @@ class ProductoController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.productos.index')->with('success', 'Producto actualizado correctamente');
+        return redirect()->route('admin.productos.index')
+            ->with('success', 'Producto actualizado correctamente');
     }
 
     private function cargarArchivo($file, $carpeta = 'productos')
     {
         $nombre = time() . '_' . uniqid() . '_' . $file->getClientOriginalName();
+
         $file->move(storage_path('app/public/' . $carpeta), $nombre);
+
         return $nombre;
     }
 
     private function generarSku($nombreProducto, $talla): string
     {
-        $letras  = preg_replace('/[^A-Za-z]/', '', $nombreProducto);
+        $letras = preg_replace('/[^A-Za-z]/', '', $nombreProducto);
         $primera = strtoupper(substr($letras, 0, 1) ?: 'X');
-        $talla   = strtoupper($talla ?? '');
+        $talla = strtoupper($talla ?? '');
 
         $faltan = 8 - 1 - strlen($talla);
         $faltan = max($faltan, 0);
 
         do {
             $rand = '';
+
             for ($i = 0; $i < $faltan; $i++) {
                 $rand .= random_int(0, 9);
             }
+
             $sku = $primera . $rand . $talla;
+
         } while (ProductoVariante::where('sku', $sku)->exists());
 
         return $sku;
@@ -400,38 +499,92 @@ class ProductoController extends Controller
 
     public function destroy($id)
     {
-        $producto = Producto::with(['variantes.imagenes'])->findOrFail($id);
+        $imagenesEliminar = [];
+        $idCat = null;
 
-        if ($producto->variantes()->where('stock', '>', 0)->exists()) {
-            return redirect()->back()->with('error', ['No se puede eliminar un producto con stock.']);
-        }
+        try {
+            DB::transaction(function () use ($id, &$imagenesEliminar, &$idCat) {
 
-        foreach ($producto->variantes as $variante) {
-            foreach ($variante->imagenes as $img) {
-                $ruta = storage_path('app/public/variantes/' . $img->imagen);
+                $producto = Producto::lockForUpdate()->findOrFail($id);
+
+                $variantes = $producto->variantes()
+                    ->with('imagenes')
+                    ->lockForUpdate()
+                    ->get();
+
+                if ($variantes->contains(fn($variante) => $variante->stock > 0)) {
+                    throw new \RuntimeException(
+                        'No se puede eliminar este producto porque todavía tiene variantes con stock.'
+                    );
+                }
+
+                $idCat = $producto->id_categoria;
+
+                $idsVariantes = $variantes->pluck('id_variante');
+
+                foreach ($variantes as $variante) {
+                    foreach ($variante->imagenes as $imagen) {
+                        $imagenesEliminar[] = $imagen->imagen;
+                    }
+                }
+
+                DB::table('detalle_carrito')
+                    ->whereIn('id_variante', $idsVariantes)
+                    ->delete();
+
+                DB::table('favoritos')
+                    ->where('id_producto', $producto->id_producto)
+                    ->delete();
+
+                foreach ($variantes as $variante) {
+                    $variante->delete();
+                }
+
+                $producto->delete();
+            });
+
+            foreach ($imagenesEliminar as $nombreImagen) {
+                $ruta = storage_path('app/public/variantes/' . $nombreImagen);
+
                 if (File::exists($ruta)) {
                     File::delete($ruta);
                 }
-                $img->delete();
             }
-            $variante->delete();
+
+            $this->actualizarEstadoCategoria($idCat);
+
+            return redirect()
+                ->route('admin.productos.index')
+                ->with('success', 'Producto eliminado definitivamente.');
+
+        } catch (\RuntimeException $e) {
+            return redirect()
+                ->back()
+                ->with('error', $e->getMessage());
+
+        } catch (\Throwable $e) {
+            \Log::error('Error al eliminar producto', [
+                'producto_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()
+                ->back()
+                ->with('error', 'No se pudo eliminar el producto. Inténtalo nuevamente.');
         }
-
-        $idCat = $producto->id_categoria;
-        $producto->delete();
-
-        $this->actualizarEstadoCategoria($idCat);
-
-        return redirect()->route('admin.productos.index')->with('success', 'Producto eliminado.');
     }
 
     private function actualizarEstadoCategoria($id_categoria)
     {
         $categoria = Categoria::find($id_categoria);
+
         if ($categoria) {
             $tieneStock = $categoria->productos()
-                ->whereHas('variantes', fn($q) => $q->where('stock', '>', 0))
+                ->whereHas('variantes', function ($q) {
+                    $q->where('stock', '>', 0);
+                })
                 ->exists();
+
             $categoria->estado_categoria = $tieneStock ? 1 : 0;
             $categoria->save();
         }

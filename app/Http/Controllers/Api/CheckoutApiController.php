@@ -29,7 +29,11 @@ class CheckoutApiController extends Controller
         $usuario = Auth::user();
 
         if ((int) $request->id_tipo_entrega === 2) {
-            if (empty($request->departamento) || empty($request->provincia) || empty($request->distrito)) {
+            if (
+                empty($request->departamento) ||
+                empty($request->provincia) ||
+                empty($request->distrito)
+            ) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Debes completar departamento, provincia y distrito para el envío.',
@@ -54,39 +58,68 @@ class CheckoutApiController extends Controller
             ], 422);
         }
 
-        foreach ($carrito->detalles as $detalle) {
-            if ($detalle->variante->stock < $detalle->cantidad) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Stock insuficiente para: ' . $detalle->variante->producto->nombre_producto,
-                ], 422);
-            }
-        }
-
         $subtotal = 0;
         $items = [];
-        foreach ($carrito->detalles as $detalle) {
-            $producto = $detalle->variante->producto;
-            $precio = round((float) ($producto->precio_oferta ?? $producto->precio), 2);
-            $subtotal += $precio * $detalle->cantidad;
+        $itemsHistoricos = [];
 
+        foreach ($carrito->detalles as $detalle) {
+            $variante = $detalle->variante;
+            $producto = $variante?->producto;
+
+            if (!$variante || !$producto) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Uno de los productos de tu carrito ya no está disponible.',
+                ], 422);
+            }
+
+            if ($variante->stock < $detalle->cantidad) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Stock insuficiente para: ' . $producto->nombre_producto,
+                ], 422);
+            }
+
+            $precio = round(
+                (float) ($producto->precio_oferta ?? $producto->precio),
+                2
+            );
+
+            $cantidad = (int) $detalle->cantidad;
+
+            $subtotal += $precio * $cantidad;
+
+            // Datos que se enviarán a Mercado Pago.
             $items[] = [
-                // SE CAMBIA EL TÍTULO PARA QUE DIGA SOLO "Productos"
-                'title'       => 'Productos', 
-                'quantity'    => (int) $detalle->cantidad,
+                'title'       => 'Productos',
+                'quantity'    => $cantidad,
                 'unit_price'  => $precio,
                 'currency_id' => 'PEN',
+            ];
+
+            // Copia de los datos del producto para el futuro historial.
+            $itemsHistoricos[] = [
+                'id_variante'     => $variante->id_variante,
+                'nombre_producto' => $producto->nombre_producto,
+                'talla'           => $variante->talla,
+                'color'           => $variante->color,
+                'sku'             => $variante->sku,
+                'cantidad'        => $cantidad,
+                'precio_unitario' => $precio,
             ];
         }
 
         $subtotal = round($subtotal, 2);
 
-        // Aplicar cupón
+        // Aplicar cupón.
         $descuento = 0;
         $idCupon = null;
 
         if ($request->filled('codigo_cupon')) {
-            $cupon = Cupon::where('codigo_cupon', strtoupper(trim($request->codigo_cupon)))->first();
+            $cupon = Cupon::where(
+                'codigo_cupon',
+                strtoupper(trim($request->codigo_cupon))
+            )->first();
 
             if ($cupon && $cupon->esValidoPara($usuario->id_usuario, $subtotal)) {
                 $descuento = round((float) $cupon->monto_cupon, 2);
@@ -96,7 +129,7 @@ class CheckoutApiController extends Controller
 
         $total = round(max(0, $subtotal - $descuento), 2);
 
-        // Ajustar los precios de los items para que sumen $total en MercadoPago
+        // Ajustar los precios enviados a Mercado Pago para aplicar el descuento.
         if ($descuento > 0 && $subtotal > 0) {
             $factor = $total / $subtotal;
             $sumaAjustada = 0;
@@ -104,15 +137,23 @@ class CheckoutApiController extends Controller
 
             foreach ($items as $i => &$item) {
                 if ($i === $totalItems - 1) {
-                    // Último item: ajustar para que la suma cuadre exactamente
                     $precioRestante = round($total - $sumaAjustada, 2);
                     $cantidad = $item['quantity'];
-                    $item['unit_price'] = round($precioRestante / $cantidad, 2);
+
+                    $item['unit_price'] = round(
+                        $precioRestante / $cantidad,
+                        2
+                    );
                 } else {
-                    $item['unit_price'] = round($item['unit_price'] * $factor, 2);
+                    $item['unit_price'] = round(
+                        $item['unit_price'] * $factor,
+                        2
+                    );
+
                     $sumaAjustada += $item['unit_price'] * $item['quantity'];
                 }
             }
+
             unset($item);
         }
 
@@ -128,43 +169,48 @@ class CheckoutApiController extends Controller
             'departamento'    => $request->departamento,
             'provincia'       => $request->provincia,
             'distrito'        => $request->distrito,
-            'items'           => collect($carrito->detalles)->map(fn($d) => [
-                'id_variante'     => $d->id_variante,
-                'cantidad'        => $d->cantidad,
-                'precio_unitario' => round((float) ($d->variante->producto->precio_oferta
-                    ?? $d->variante->producto->precio), 2),
-            ])->toArray(),
+
+            // Incluye los datos históricos capturados en este momento.
+            'items'           => $itemsHistoricos,
         ];
 
-        Cache::put("checkout:{$referencia}", $checkoutData, now()->addHours(2));
+        Cache::put(
+            "checkout:{$referencia}",
+            $checkoutData,
+            now()->addHours(2)
+        );
 
-        // Log para poder copiar la referencia y probar la URL de éxito manualmente
         \Log::info('Checkout API guardado', [
             'referencia'  => $referencia,
             'id_usuario'  => $usuario->id_usuario,
             'subtotal'    => $subtotal,
             'descuento'   => $descuento,
             'total'       => $total,
-            'items_count' => count($checkoutData['items']),
+            'items_count' => count($itemsHistoricos),
         ]);
 
         MercadoPagoConfig::setAccessToken(env('MP_ACCESS_TOKEN'));
+
         $client = new PreferenceClient();
 
         $preferenceData = [
-            'items'              => $items,
-            'payer'              => [
+            'items' => $items,
+
+            'payer' => [
                 'name'  => $usuario->nombres,
                 'email' => $usuario->correo,
             ],
-            'back_urls'          => [
+
+            'back_urls' => [
                 'success' => route('pago.exito'),
                 'failure' => route('pago.fallo'),
                 'pending' => route('pago.pendiente'),
             ],
+
             'notification_url'   => route('pago.webhook'),
             'external_reference' => $referencia,
-            'payment_methods'    => [
+
+            'payment_methods' => [
                 'installments'         => 1,
                 'default_installments' => 1,
             ],
@@ -172,11 +218,15 @@ class CheckoutApiController extends Controller
 
         try {
             $preference = $client->create($preferenceData);
+
         } catch (\Throwable $e) {
             \Log::error('MP preferencia error', [
                 'msg'     => $e->getMessage(),
                 'usuario' => $usuario->id_usuario,
             ]);
+
+            Cache::forget("checkout:{$referencia}");
+
             return response()->json([
                 'success' => false,
                 'message' => 'Error al crear la preferencia de pago.',
@@ -208,14 +258,19 @@ class CheckoutApiController extends Controller
         }
 
         $completado = Cache::get("checkout-pagado:{$referencia}");
+
         if ($completado) {
             return response()->json([
                 'success' => true,
-                'data' => array_merge(['estado' => 'completado'], $completado),
+                'data' => array_merge(
+                    ['estado' => 'completado'],
+                    $completado
+                ),
             ]);
         }
 
         $pendiente = Cache::get("checkout:{$referencia}");
+
         if ($pendiente) {
             return response()->json([
                 'success' => true,
