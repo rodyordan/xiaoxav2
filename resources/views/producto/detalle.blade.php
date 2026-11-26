@@ -188,7 +188,7 @@
 
                     <div class="flex items-center gap-3">
                         {{-- Selector de cantidad --}}
-                        <div id="quantity-controls" class="flex items-center border-2 border-gray-400 rounded-lg overflow-hidden opacity-50 cursor-not-allowed transition-all">
+                        <div id="quantity-controls" class="flex items-center border-2 border-gray-400 rounded-lg overflow-hidden transition-all">
                             <button type="button" id="btn-minus" onclick="disminuirCantidad()" disabled
                                     class="w-9 h-11 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition disabled:cursor-not-allowed disabled:hover:bg-transparent">
                                 <x-heroicon-o-minus class="w-4 h-4" />
@@ -278,10 +278,18 @@
     }
     .talla-btn:disabled,
     .talla-btn.talla-bloqueada {
-        color: #000 !important;
+        color: #9ca3af !important;
         text-decoration: none !important;
-        cursor: not-allowed;
-        opacity: 0.5;
+        cursor: default !important;
+        opacity: 1;
+    }
+
+    #quantity-controls button:disabled {
+    cursor: default !important;
+    }
+
+    #quantity-controls button:not(:disabled) {
+        cursor: pointer;
     }
 
     .scroll-gallery { overflow-x: hidden; }
@@ -413,17 +421,30 @@
         const controls = document.getElementById('quantity-controls');
         const btnMinus = document.getElementById('btn-minus');
         const btnPlus = document.getElementById('btn-plus');
+        const display = document.getElementById('cantidad-display');
 
         if (!tallaSeleccionada || stockMaximo === 0) {
-            controls.classList.add('opacity-50', 'cursor-not-allowed');
-            controls.classList.remove('opacity-100');
             btnMinus.disabled = true;
             btnPlus.disabled = true;
+
+            btnMinus.classList.add('text-gray-400');
+            btnPlus.classList.add('text-gray-400');
+            display.classList.add('text-gray-400');
+
+            btnMinus.classList.remove('text-gray-600');
+            btnPlus.classList.remove('text-gray-600');
+            display.classList.remove('text-gray-900');
+
             return;
         }
 
-        controls.classList.remove('opacity-50', 'cursor-not-allowed');
-        controls.classList.add('opacity-100');
+        btnMinus.classList.remove('text-gray-400');
+        btnPlus.classList.remove('text-gray-400');
+        display.classList.remove('text-gray-400');
+
+        btnMinus.classList.add('text-gray-600');
+        btnPlus.classList.add('text-gray-600');
+        display.classList.add('text-gray-900');
 
         btnMinus.disabled = (cantidad <= 1);
         btnPlus.disabled = (cantidad >= stockMaximo);

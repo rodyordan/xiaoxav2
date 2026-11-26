@@ -25,6 +25,7 @@ class HomeController extends Controller
 
         $query = Producto::query()
             ->where('estado_producto', 1)
+            ->conStock()
             ->with(['variantes.imagenes']);
 
         if ($request->filled('categoria') && $request->categoria != 'Todo') {
@@ -69,8 +70,9 @@ class HomeController extends Controller
             $categorias = Categoria::where('estado_categoria', 1)
                 ->with(['productos' => function ($q) {
                     $q->where('estado_producto', 1)
-                      ->with(['variantes.imagenes'])
-                      ->orderBy('created_at', 'desc');
+                        ->conStock()
+                        ->with(['variantes.imagenes'])
+                        ->orderBy('created_at', 'desc');
                 }])
                 ->orderBy('id_categoria', 'asc')
                 ->get()

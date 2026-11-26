@@ -16,6 +16,9 @@ class VentaController extends Controller
     public function index()
     {
         $productos = Producto::with(['variantes.imagenes', 'categoria'])
+            ->whereHas('variantes', function ($query) {
+                $query->where('stock', '>', 0);
+            })
             ->orderBy('nombre_producto')
             ->get();
 
